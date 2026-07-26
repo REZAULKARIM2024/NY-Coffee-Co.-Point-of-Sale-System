@@ -191,5 +191,5 @@ Internal/demo project — not licensed for production payment processing. `POSSe
 
 ## Contact
 
-**Rezaul Karim** — Owner & Managing Director, NY Coffee Co.
+**Rezaul Karim** — NY Coffee Co.
 [LinkedIn](https://www.linkedin.com/in/rezaul-karim-803a3b273)

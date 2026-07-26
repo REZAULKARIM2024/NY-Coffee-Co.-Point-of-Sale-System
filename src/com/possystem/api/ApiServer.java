@@ -31,7 +31,7 @@ import java.util.concurrent.Executors;
  * and the Swing UI share the exact same business logic and DB transaction path.
  *
  * Run with: java -cp "target/classes;lib/mysql-connector-j-9.7.0/...jar" com.possystem.api.ApiServer [port]
- * Default port: 8080.
+ * Default port: 8081 (8080 is often already taken by Jenkins or other local dev tools).
  */
 public class ApiServer {
 
@@ -41,7 +41,7 @@ public class ApiServer {
     private final POSService posService = new POSService();
 
     public static void main(String[] args) throws IOException {
-        int port = 8080;
+        int port = 8081;
         if (args.length > 0) {
             try { port = Integer.parseInt(args[0]); } catch (NumberFormatException ignored) { }
         }

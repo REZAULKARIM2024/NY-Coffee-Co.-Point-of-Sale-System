@@ -223,7 +223,7 @@ Start it with:
 run_api_server.bat
 ```
 
-which listens on `http://localhost:8080` by default.
+which listens on `http://localhost:8081` by default.
 
 | Method | Endpoint | Description |
 |---|---|---|

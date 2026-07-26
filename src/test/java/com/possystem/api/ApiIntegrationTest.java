@@ -20,7 +20,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * (built into the JDK — no extra HTTP client dependency needed).
  *
  * These are NOT run as part of the normal offline unit-test suite: they require the API server
- * to actually be running with a live MySQL connection (run_api_server.bat) at http://localhost:8080.
+ * to actually be running with a live MySQL connection (run_api_server.bat) at http://localhost:8081.
  * If the server isn't reachable, every test in this class is skipped (via Assumptions) rather
  * than failed, so run_tests.bat stays green in environments without the app/DB running.
  *
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  */
 class ApiIntegrationTest {
 
-    private static final String BASE_URL = "http://localhost:8080";
+    private static final String BASE_URL = "http://localhost:8081";
     private static final HttpClient client = HttpClient.newBuilder()
             .connectTimeout(Duration.ofSeconds(2))
             .build();

@@ -21,6 +21,8 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Project Structure](#project-structure)
 - [Database Overview](#database-overview)
 - [Seed / Utility Scripts](#seed--utility-scripts)
+- [Testing](#testing)
+- [REST API](#rest-api)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -71,6 +73,8 @@ NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rin
 | DB Driver | MySQL Connector/J 9.7.0 |
 | Printing | `java.awt.print` (native OS print dialog) |
 | Build/IDE | Eclipse (or any IDE with a standard `src`/`lib` layout) |
+| Testing | JUnit 5 (Jupiter) + JUnit 4 (Vintage), run via `org.junit.platform.console.ConsoleLauncher` |
+| REST API | `com.sun.net.httpserver.HttpServer` (JDK built-in), hand-rolled JSON — no external framework |
 
 ## Prerequisites
 
@@ -142,15 +146,24 @@ src/com/possystem/
   model/      Domain objects (Employee, MenuItem, Order, PayrollRun, ...)
   dao/        JDBC data-access layer (one per entity/feature area)
   service/    Business logic (POSService, PayrollService, ...)
+  api/        REST API layer (ApiServer, Json) — JDK HttpServer, no external deps
   gui/        Swing screens (POSPanel, PayrollPanel, AboutPanel, ...)
   util/       Shared UI theming, i18n, printable art, helpers
   tools/      Standalone seed/migration utilities (run via run_*.bat)
+src/test/java/com/possystem/
+  service/    Unit tests for POSService / PayrollService
+  model/      Unit tests for CartItem
+  api/        Unit tests for Json + live ApiIntegrationTest
 database/
   schema.sql  Full schema + sample seed data
 lib/
   mysql-connector-j-9.7.0/   JDBC driver jar
+  junit5/                    Vendored JUnit 5/4 + deps (see Testing)
+postman/
+  NY-Coffee-Co-API.postman_collection.json
 target/
-  classes/    Compiled output
+  classes/        Compiled main output
+  test-classes/   Compiled test output
 ```
 
 ## Database Overview
@@ -174,12 +187,76 @@ See `database/schema.sql` for the complete definition and sample data.
 
 The repo includes standalone launchers (`run_*.bat`) for one-off data setup and maintenance tasks — seeding employees/payroll/deliveries/recipes/suppliers/barcodes, and migration tools for schema changes (e.g. payroll tax columns, operations tables). Each corresponds to a `main()` class under `src/com/possystem/tools/`.
 
+## Testing
+
+Unit tests live under `src/test/java/com/possystem/...` and cover the pure, DB-free calculation logic:
+
+- `POSServiceTest` — subtotal/tax math (`calculateSubtotal`, `calculateTax`), including loyalty-free items and rounding.
+- `PayrollServiceTest` — gross pay and withholding math (`computeGrossPay`, `computeTaxes`) across regular/overtime/weekend/holiday buckets.
+- `CartItemTest` — unit price composition from size + modifier price deltas, and line-total behavior for loyalty-free items.
+- `JsonTest` — round-trip correctness of the hand-rolled JSON reader/writer used by the REST API.
+- `ApiIntegrationTest` — live HTTP tests against a running `ApiServer` (see below); auto-skips if the server isn't reachable, so it never fails an offline test run.
+
+Because this project has no route to Maven Central (see [REST API](#rest-api)), the test framework itself is vendored as plain jars under `lib/junit5/` (JUnit 5 Jupiter/Platform, JUnit 4 Vintage, and their transitive deps — apiguardian, opentest4j, picocli — pulled from the Ubuntu/Debian package archive rather than Maven).
+
+Run the full suite:
+
+```bash
+run_tests.bat
+```
+
+or manually:
+
+```bash
+javac -d target/classes -cp lib/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0.jar $(find src/com -name "*.java")
+javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -name "*.java")
+java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
+```
+
+## REST API
+
+`com.possystem.api.ApiServer` exposes the same DAO/service layer over HTTP/JSON, built entirely on `com.sun.net.httpserver.HttpServer` and a hand-rolled JSON reader/writer (`com.possystem.api.Json`) — no Spring Boot or Jackson, since this project's build environment can't reach Maven Central. This keeps the API zero-dependency beyond the JDK and the existing MySQL driver.
+
+Start it with:
+
+```bash
+run_api_server.bat
+```
+
+which listens on `http://localhost:8080` by default.
+
+| Method | Endpoint | Description |
+|---|---|---|
+| GET | `/api/health` | Service + DB connectivity status |
+| GET | `/api/menu-items` | List active menu items (optional `?category={id}`) |
+| GET | `/api/menu-items/{id}` | Get one menu item by id |
+| GET | `/api/employees` | List all employees |
+| GET | `/api/orders/{id}` | Order header + line items |
+| POST | `/api/checkout` | Create an order (see body shape below) |
+
+Example checkout request:
+
+```json
+{
+  "userId": 1,
+  "customerId": null,
+  "paymentMethod": "CASH",
+  "orderSource": "ONLINE",
+  "orderType": "PICKUP",
+  "discount": 0,
+  "items": [ { "menuItemId": 12, "quantity": 2 } ]
+}
+```
+
+A ready-to-import Postman collection with example requests and test assertions (status codes, response shape) is at `postman/NY-Coffee-Co-API.postman_collection.json`. Set its `baseUrl` variable if not running on the default port.
+
 ## Roadmap
 
 - Real payment gateway integration (currently simulated in `POSService.simulatePaymentReference`)
 - Receipt printing/email/SMS
 - Kitchen/station display board
-- Automated test coverage (unit tests for `service`/`dao` layers, integration tests for checkout flows)
+- Expand unit test coverage into the `dao` layer (integration tests against a test database)
+- API authentication (currently unauthenticated — intended for local/internal use)
 
 ## Contributing
 

@@ -93,16 +93,19 @@ public class PayrollService {
         }
 
         BigDecimal rate = employee.getHourlyRate() == null ? BigDecimal.ZERO : employee.getHourlyRate();
-        BigDecimal gross = computeGrossPay(regularHours, overtimeHours, weekendHours, holidayHours, rate);
+        BigDecimal gross = regularHours.multiply(rate)
+                .add(overtimeHours.multiply(rate).multiply(OVERTIME_MULTIPLIER))
+                .add(weekendHours.multiply(rate).multiply(WEEKEND_MULTIPLIER))
+                .add(holidayHours.multiply(rate).multiply(HOLIDAY_MULTIPLIER))
+                .setScale(2, RoundingMode.HALF_UP);
 
         BigDecimal ded = deductions == null ? BigDecimal.ZERO : deductions;
 
-        BigDecimal[] taxes = computeTaxes(gross);
-        BigDecimal federalTax = taxes[0];
-        BigDecimal socialSecurity = taxes[1];
-        BigDecimal medicare = taxes[2];
-        BigDecimal stateTax = taxes[3];
-        BigDecimal cityTax = taxes[4];
+        BigDecimal federalTax = gross.multiply(FEDERAL_TAX_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal socialSecurity = gross.multiply(SOCIAL_SECURITY_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal medicare = gross.multiply(MEDICARE_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal stateTax = gross.multiply(NY_STATE_TAX_RATE).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal cityTax = gross.multiply(NYC_CITY_TAX_RATE).setScale(2, RoundingMode.HALF_UP);
         BigDecimal totalTaxes = federalTax.add(socialSecurity).add(medicare).add(stateTax).add(cityTax);
 
         BigDecimal net = gross.subtract(totalTaxes).subtract(ded);
@@ -133,37 +136,4 @@ public class PayrollService {
         payrollDAO.savePayrollRun(run);
         return run;
     }
-
-    /**
-     * Pure gross-pay formula, pulled out of runPayroll() so it can be unit tested without a
-     * database: regular hours at the base rate, plus overtime/weekend/holiday hours at their
-     * respective multipliers, rounded to cents.
-     */
-    public static BigDecimal computeGrossPay(BigDecimal regularHours, BigDecimal overtimeHours,
-                                              BigDecimal weekendHours, BigDecimal holidayHours, BigDecimal rate) {
-        BigDecimal r = rate == null ? BigDecimal.ZERO : rate;
-        return nz(regularHours).multiply(r)
-                .add(nz(overtimeHours).multiply(r).multiply(OVERTIME_MULTIPLIER))
-                .add(nz(weekendHours).multiply(r).multiply(WEEKEND_MULTIPLIER))
-                .add(nz(holidayHours).multiply(r).multiply(HOLIDAY_MULTIPLIER))
-                .setScale(2, RoundingMode.HALF_UP);
-    }
-
-    /**
-     * Pure withholding formula, pulled out of runPayroll() so it can be unit tested without a
-     * database. Returns {federalTax, socialSecurity, medicare, stateTax, cityTax}, each rounded
-     * to cents, in that fixed order.
-     */
-    public static BigDecimal[] computeTaxes(BigDecimal gross) {
-        BigDecimal g = nz(gross);
-        return new BigDecimal[]{
-            g.multiply(FEDERAL_TAX_RATE).setScale(2, RoundingMode.HALF_UP),
-            g.multiply(SOCIAL_SECURITY_RATE).setScale(2, RoundingMode.HALF_UP),
-            g.multiply(MEDICARE_RATE).setScale(2, RoundingMode.HALF_UP),
-            g.multiply(NY_STATE_TAX_RATE).setScale(2, RoundingMode.HALF_UP),
-            g.multiply(NYC_CITY_TAX_RATE).setScale(2, RoundingMode.HALF_UP)
-        };
-    }
-
-    private static BigDecimal nz(BigDecimal v) { return v == null ? BigDecimal.ZERO : v; }
 }

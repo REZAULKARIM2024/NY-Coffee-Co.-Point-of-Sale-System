@@ -1,0 +1,218 @@
+{
+  "info": {
+    "name": "NY Coffee Co. POS API",
+    "description": "Read/write endpoints exposed by com.possystem.api.ApiServer (a dependency-free JDK HttpServer REST layer over the existing DAO/service classes). Start the server with run_api_server.bat, then run this collection against {{baseUrl}}.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8080" },
+    { "key": "menuItemId", "value": "1" },
+    { "key": "orderId", "value": "1" }
+  ],
+  "item": [
+    {
+      "name": "Health Check",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Body has status ok', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.status).to.eql('ok');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Active Menu Items",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/menu-items"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Has items array', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.items).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Menu Items By Category",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/menu-items?category=1"
+      }
+    },
+    {
+      "name": "Get Menu Item By Id",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/menu-items/{{menuItemId}}"
+      }
+    },
+    {
+      "name": "Get Menu Item By Id - Not Found",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/menu-items/999999"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "List Employees",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/employees"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Has employees array', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.employees).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout - Success",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/api/checkout",
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": 1,\n  \"customerId\": null,\n  \"paymentMethod\": \"CASH\",\n  \"orderSource\": \"ONLINE\",\n  \"orderType\": \"PICKUP\",\n  \"discount\": 0,\n  \"items\": [\n    { \"menuItemId\": {{menuItemId}}, \"quantity\": 2 }\n  ]\n}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 201', () => pm.response.to.have.status(201));",
+              "pm.test('Response has orderId and total', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.orderId).to.be.a('number');",
+              "  pm.expect(json.total).to.be.a('string');",
+              "  pm.collectionVariables.set('orderId', json.orderId);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout - Missing userId (400)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/api/checkout",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"paymentMethod\": \"CASH\", \"items\": [ { \"menuItemId\": 1, \"quantity\": 1 } ] }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 400', () => pm.response.to.have.status(400));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Checkout - Unknown Menu Item (404)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Content-Type", "value": "application/json" } ],
+        "url": "{{baseUrl}}/api/checkout",
+        "body": {
+          "mode": "raw",
+          "raw": "{ \"userId\": 1, \"paymentMethod\": \"CASH\", \"items\": [ { \"menuItemId\": 999999, \"quantity\": 1 } ] }"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Order By Id",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/orders/{{orderId}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 200', () => pm.response.to.have.status(200));",
+              "pm.test('Has items array', () => {",
+              "  const json = pm.response.json();",
+              "  pm.expect(json.items).to.be.an('array');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get Order By Id - Not Found",
+      "request": {
+        "method": "GET",
+        "url": "{{baseUrl}}/api/orders/999999"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('Status 404', () => pm.response.to.have.status(404));"
+            ]
+          }
+        }
+      ]
+    }
+  ]
+}

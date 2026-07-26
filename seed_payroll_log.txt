@@ -1,0 +1,7 @@
+Seeding time clock data from 2026-05-29 to 2026-07-23
+Holidays ensured.
+Employees to seed: 101 (excluded owner)
+Time clock shifts inserted: 4117
+Payroll runs created: 404
+DONE.
+DONE_MARKER 

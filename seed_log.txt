@@ -1,0 +1,4 @@
+Executed statement, rows affected: 100
+Executed statement, rows affected: 1
+DONE. Total rows inserted: 101
+DONE_MARKER 

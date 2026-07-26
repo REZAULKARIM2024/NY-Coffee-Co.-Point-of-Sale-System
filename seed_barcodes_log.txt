@@ -1,0 +1,3 @@
+Barcodes assigned: 1545
+DONE.
+DONE_MARKER 

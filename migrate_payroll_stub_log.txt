@@ -1,0 +1,10 @@
+OK: added payroll_runs.federal_tax
+OK: added payroll_runs.social_security
+OK: added payroll_runs.medicare
+OK: added payroll_runs.state_tax
+OK: added payroll_runs.city_tax
+OK: added payroll_runs.pay_date
+OK: added payroll_runs.check_number
+OK: backfilled tax/pay-date/check-number on 407 existing payroll_runs rows
+DONE.
+DONE_MARKER 

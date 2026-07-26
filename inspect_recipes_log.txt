@@ -1,0 +1,55 @@
+--- category -> department mapping ---
+10 | Bakery | dept=null | station=Bakery
+9 | Beverages | dept=null | station=Beverages
+20 | Featured | dept=null | station=Beverages
+13 | Local | dept=null | station=Local
+12 | Retail | dept=null | station=Retail
+11 | Sandwiches | dept=null | station=Sandwich Station
+6 | Bagels & Muffins | dept=Bakery | station=Bakery
+7 | Donuts & Donut Holes | dept=Bakery | station=Bakery
+26 | Grab & Go | dept=Bakery | station=Bakery
+25 | Sweet Treats | dept=Bakery | station=Bakery
+14 | Coffee | dept=Beverages | station=Coffee Bar
+15 | Espresso | dept=Beverages | station=Coffee Bar
+18 | Frozen | dept=Beverages | station=Frozen Station
+19 | Other Beverages | dept=Beverages | station=Beverages
+17 | Refreshers | dept=Beverages | station=Refresher Bar
+16 | Teas | dept=Beverages | station=Tea Station
+22 | Fan Favorites | dept=Featured | station=Beverages
+23 | Limited Time Offers | dept=Featured | station=Beverages
+21 | New Arrivals | dept=Featured | station=Beverages
+24 | Value Bundles | dept=Featured | station=Beverages
+35 | Catering Menu | dept=Local | station=Local
+36 | Charity, Deposits & Pup Cups | dept=Local | station=Local
+34 | Local Items | dept=Local | station=Local
+8 | Coffee & Tea | dept=Retail | station=Retail
+33 | Gift Cards & More | dept=Retail | station=Retail
+31 | Gift Sets & Holiday | dept=Retail | station=Retail
+32 | Grab & Go Treats | dept=Retail | station=Retail
+30 | Mugs & Drinkware | dept=Retail | station=Retail
+27 | Breakfast Sandwiches | dept=Sandwiches | station=Sandwich Station
+28 | Sides & Bites | dept=Sandwiches | station=Sandwich Station
+29 | Snacking | dept=Sandwiches | station=Sandwich Station
+4 | Specialty Sandwiches | dept=Sandwiches | station=Sandwich Station
+5 | Wraps & Bowls | dept=Sandwiches | station=Snack Station
+--- existing ingredients ---
+1 | Espresso Beans | g
+2 | Milk | ml
+3 | Cold Brew Concentrate | ml
+4 | Tea Bags | unit
+5 | Chai Concentrate | ml
+6 | Frozen Coffee Base | ml
+7 | Lemonade Base | ml
+8 | Turkey Slices | g
+9 | Bread | unit
+10 | Cheese Slices | unit
+11 | Tortilla Wrap | unit
+12 | Mixed Vegetables | g
+13 | Hash Brown Patty | unit
+14 | Plain Bagel Dough | unit
+15 | Blueberry Muffin Batter | unit
+16 | Glazed Donut Base | unit
+17 | Chocolate Frosted Donut Base | unit
+18 | Ground Coffee Bag Stock | unit
+19 | K-Cup Box Stock | unit
+DONE_MARKER 

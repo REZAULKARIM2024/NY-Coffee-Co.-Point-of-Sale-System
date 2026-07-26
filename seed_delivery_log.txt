@@ -1,0 +1,7 @@
+Using user_id=1 for order.user_id
+Menu items available: 1545
+Delivery drivers found: [Jonathan Weber, Min-jun Chowdhury, Jamal Gonzalez, Kevin Adeyemi, Rachel Diaz, Yuki Walker, Thomas Ortiz, Diego Clark, Steven Berg, Paula Miller, Isabella Patel, Wei Shah]
+Customers created: 40
+Delivery orders created: 70
+DONE.
+DONE_MARKER 

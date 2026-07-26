@@ -1,0 +1,19 @@
+# Compiled output — rebuilt from src/ on every compile, should never be committed
+target/
+bin/
+*.class
+
+# Eclipse project-local settings (keep .classpath and .project, ignore the rest)
+.settings/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Local DB credentials if ever externalized (not currently used, but safe to have)
+*.env

@@ -1,0 +1,202 @@
+package com.possystem.gui;
+
+import com.possystem.util.I18n;
+import com.possystem.util.UITheme;
+
+import javax.swing.*;
+import java.awt.*;
+
+/**
+ * A Help/FAQ dialog available in all 5 supported languages. Its language dropdown drives the
+ * same global {@link I18n} language used by the rest of the POS, so picking a language here
+ * also switches the main screen once the dialog is closed.
+ */
+public class HelpDialog extends JDialog {
+
+    // English question/answer pairs, each followed by {bn, hi, es, fr} translations in the
+    // same order. Index 0 of each row = the language-neutral lookup order used below.
+    private static final String[][] TOPICS_EN = {
+        {"How do I add an item to an order?",
+         "Tap a department tab (Beverages, Bakery, etc.), then tap the item. Choose size, temperature, and any add-ons, then tap Item Done."},
+        {"How do I apply a discount?",
+         "Enter the discount amount in the Discount $ box in the cart column before pressing PAY."},
+        {"How do I take a delivery order?",
+         "Change Order Type to DELIVERY and enter the delivery address when prompted."},
+        {"How do I redeem a gift card?",
+         "Press PAY, then tap GC Redeem and enter the gift card number."},
+        {"How do I change the app language?",
+         "Tap the language button next to the clock at the top of the screen and choose your language."},
+        {"How do I register a loyalty customer?",
+         "Tap + Loyalty Customer in the cart column and enter the customer's name and phone number."},
+        {"How do I cancel an order?",
+         "Tap Cancel Order in the cart column, or Cancel Saved/Stored Order on the Payments screen."},
+        {"Who do I contact for more help?",
+         "Use the SUPPORT section under the Functions tab to call or chat with support."},
+    };
+
+    private static final String[][] TOPICS_BN = {
+        {"অর্ডারে কীভাবে আইটেম যোগ করব?",
+         "একটি ডিপার্টমেন্ট ট্যাবে (পানীয়, বেকারি ইত্যাদি) ট্যাপ করুন, তারপর আইটেমে ট্যাপ করুন। সাইজ, তাপমাত্রা ও অ্যাড-অন বেছে নিয়ে আইটেম সম্পন্ন-এ ট্যাপ করুন।"},
+        {"ছাড় কীভাবে প্রয়োগ করব?",
+         "পেমেন্ট চাপার আগে কার্ট কলামের ছাড় $ বক্সে ছাড়ের পরিমাণ লিখুন।"},
+        {"ডেলিভারি অর্ডার কীভাবে নেব?",
+         "অর্ডার টাইপ পরিবর্তন করে DELIVERY করুন এবং জিজ্ঞাসা করলে ডেলিভারি ঠিকানা লিখুন।"},
+        {"গিফট কার্ড কীভাবে রিডিম করব?",
+         "পেমেন্ট চাপুন, তারপর গিফট কার্ড রিডিম-এ ট্যাপ করে গিফট কার্ড নম্বর লিখুন।"},
+        {"অ্যাপের ভাষা কীভাবে পরিবর্তন করব?",
+         "স্ক্রিনের উপরে ঘড়ির পাশে ভাষা বাটনে ট্যাপ করে আপনার ভাষা বেছে নিন।"},
+        {"লয়্যালটি কাস্টমার কীভাবে যোগ করব?",
+         "কার্ট কলামে + লয়্যালটি কাস্টমার-এ ট্যাপ করে গ্রাহকের নাম ও ফোন নম্বর দিন।"},
+        {"অর্ডার কীভাবে বাতিল করব?",
+         "কার্ট কলামে অর্ডার বাতিল, অথবা পেমেন্টস স্ক্রিনে সংরক্ষিত অর্ডার বাতিল-এ ট্যাপ করুন।"},
+        {"আরও সাহায্যের জন্য কার সাথে যোগাযোগ করব?",
+         "ফাংশন ট্যাবের সাপোর্ট বিভাগ ব্যবহার করে সাপোর্টে কল বা চ্যাট করুন।"},
+    };
+
+    private static final String[][] TOPICS_HI = {
+        {"ऑर्डर में आइटम कैसे जोड़ें?",
+         "किसी डिपार्टमेंट टैब (पेय, बेकरी आदि) पर टैप करें, फिर आइटम पर टैप करें। आकार, तापमान और ऐड-ऑन चुनें, फिर आइटम पूर्ण पर टैप करें।"},
+        {"छूट कैसे लागू करें?",
+         "भुगतान दबाने से पहले कार्ट कॉलम के छूट $ बॉक्स में छूट की राशि दर्ज करें।"},
+        {"डिलीवरी ऑर्डर कैसे लें?",
+         "ऑर्डर प्रकार को DELIVERY में बदलें और पूछे जाने पर डिलीवरी पता दर्ज करें।"},
+        {"गिफ्ट कार्ड कैसे रिडीम करें?",
+         "भुगतान दबाएं, फिर गिफ्ट कार्ड रिडीम पर टैप करें और गिफ्ट कार्ड नंबर दर्ज करें।"},
+        {"ऐप की भाषा कैसे बदलें?",
+         "स्क्रीन के ऊपर घड़ी के बगल में भाषा बटन पर टैप करें और अपनी भाषा चुनें।"},
+        {"लॉयल्टी ग्राहक कैसे पंजीकृत करें?",
+         "कार्ट कॉलम में + लॉयल्टी ग्राहक पर टैप करें और ग्राहक का नाम व फ़ोन नंबर दर्ज करें।"},
+        {"ऑर्डर कैसे रद्द करें?",
+         "कार्ट कॉलम में ऑर्डर रद्द करें, या भुगतान स्क्रीन पर सहेजा गया ऑर्डर रद्द करें पर टैप करें।"},
+        {"अधिक सहायता के लिए किससे संपर्क करें?",
+         "फ़ंक्शन टैब में सहायता केंद्र अनुभाग का उपयोग करके सहायता को कॉल या चैट करें।"},
+    };
+
+    private static final String[][] TOPICS_ES = {
+        {"¿Cómo agrego un artículo a un pedido?",
+         "Toca una pestaña de departamento (Bebidas, Panadería, etc.), luego toca el artículo. Elige tamaño, temperatura y extras, y luego toca Artículo listo."},
+        {"¿Cómo aplico un descuento?",
+         "Ingresa el monto del descuento en el cuadro Descuento $ de la columna del carrito antes de presionar PAGAR."},
+        {"¿Cómo tomo un pedido a domicilio?",
+         "Cambia el Tipo de pedido a DELIVERY e ingresa la dirección de entrega cuando se te solicite."},
+        {"¿Cómo canjeo una tarjeta de regalo?",
+         "Presiona PAGAR, luego toca Canjear tarjeta de regalo e ingresa el número de la tarjeta."},
+        {"¿Cómo cambio el idioma de la aplicación?",
+         "Toca el botón de idioma junto al reloj en la parte superior de la pantalla y elige tu idioma."},
+        {"¿Cómo registro a un cliente de lealtad?",
+         "Toca + Cliente de lealtad en la columna del carrito e ingresa el nombre y teléfono del cliente."},
+        {"¿Cómo cancelo un pedido?",
+         "Toca Cancelar pedido en la columna del carrito, o Cancelar pedido guardado en la pantalla de pagos."},
+        {"¿A quién contacto para más ayuda?",
+         "Usa la sección SOPORTE en la pestaña Funciones para llamar o chatear con soporte."},
+    };
+
+    private static final String[][] TOPICS_FR = {
+        {"Comment ajouter un article à une commande ?",
+         "Appuyez sur un onglet de département (Boissons, Boulangerie, etc.), puis sur l'article. Choisissez la taille, la température et les suppléments, puis appuyez sur Article terminé."},
+        {"Comment appliquer une remise ?",
+         "Saisissez le montant de la remise dans la case Remise $ de la colonne du panier avant d'appuyer sur PAYER."},
+        {"Comment prendre une commande en livraison ?",
+         "Changez le Type de commande en DELIVERY et saisissez l'adresse de livraison lorsque demandé."},
+        {"Comment échanger une carte-cadeau ?",
+         "Appuyez sur PAYER, puis sur Échanger carte-cadeau et saisissez le numéro de la carte."},
+        {"Comment changer la langue de l'application ?",
+         "Appuyez sur le bouton de langue à côté de l'horloge en haut de l'écran et choisissez votre langue."},
+        {"Comment enregistrer un client fidélité ?",
+         "Appuyez sur + Client fidélité dans la colonne du panier et saisissez le nom et le téléphone du client."},
+        {"Comment annuler une commande ?",
+         "Appuyez sur Annuler la commande dans la colonne du panier, ou Annuler la commande enregistrée sur l'écran des paiements."},
+        {"Qui contacter pour plus d'aide ?",
+         "Utilisez la section ASSISTANCE de l'onglet Fonctions pour appeler ou discuter avec l'assistance."},
+    };
+
+    private final JPanel topicsPanel = new JPanel();
+    private final JLabel titleLabel = new JLabel();
+    private final JLabel pickerLabel = new JLabel();
+    private final JButton closeBtn = new JButton();
+
+    public HelpDialog(Frame owner) {
+        super(owner, true);
+        setLayout(new BorderLayout());
+        setSize(620, 560);
+        setLocationRelativeTo(owner);
+
+        JPanel header = new JPanel(new BorderLayout());
+        header.setBackground(UITheme.HEADER_BG);
+        header.setBorder(BorderFactory.createEmptyBorder(14, 18, 14, 18));
+        titleLabel.setForeground(Color.WHITE);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(Font.BOLD, 18f));
+        header.add(titleLabel, BorderLayout.WEST);
+
+        JPanel pickerRow = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
+        pickerRow.setOpaque(false);
+        pickerLabel.setForeground(Color.LIGHT_GRAY);
+        JComboBox<I18n.Lang> langBox = new JComboBox<>(I18n.Lang.values());
+        langBox.setSelectedItem(I18n.current());
+        langBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                    boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof I18n.Lang) setText(((I18n.Lang) value).nativeName);
+                return this;
+            }
+        });
+        langBox.addActionListener(e -> {
+            I18n.Lang selected = (I18n.Lang) langBox.getSelectedItem();
+            I18n.setLanguage(selected);
+            refreshText();
+        });
+        pickerRow.add(pickerLabel);
+        pickerRow.add(langBox);
+        header.add(pickerRow, BorderLayout.EAST);
+
+        add(header, BorderLayout.NORTH);
+
+        topicsPanel.setLayout(new BoxLayout(topicsPanel, BoxLayout.Y_AXIS));
+        topicsPanel.setBackground(Color.WHITE);
+        topicsPanel.setBorder(BorderFactory.createEmptyBorder(16, 18, 16, 18));
+        JScrollPane scroll = new JScrollPane(topicsPanel);
+        scroll.setBorder(null);
+        add(scroll, BorderLayout.CENTER);
+
+        JPanel footer = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 10));
+        closeBtn.addActionListener(e -> dispose());
+        footer.add(closeBtn);
+        add(footer, BorderLayout.SOUTH);
+
+        refreshText();
+    }
+
+    private String[][] topicsForCurrentLanguage() {
+        switch (I18n.current()) {
+            case BN: return TOPICS_BN;
+            case HI: return TOPICS_HI;
+            case ES: return TOPICS_ES;
+            case FR: return TOPICS_FR;
+            default: return TOPICS_EN;
+        }
+    }
+
+    private void refreshText() {
+        setTitle(I18n.t("Help & Support"));
+        titleLabel.setText(I18n.t("Help & Support"));
+        pickerLabel.setText(I18n.t("Select language:"));
+        closeBtn.setText(I18n.t("Close"));
+
+        topicsPanel.removeAll();
+        String[][] topics = topicsForCurrentLanguage();
+        for (String[] qa : topics) {
+            JLabel q = new JLabel("<html><b>" + qa[0] + "</b></html>");
+            q.setAlignmentX(Component.LEFT_ALIGNMENT);
+            q.setForeground(UITheme.SECTION_HEADER_COLOR);
+            q.setBorder(BorderFactory.createEmptyBorder(10, 0, 4, 0));
+            JLabel a = new JLabel("<html><div style='width:520px'>" + qa[1] + "</div></html>");
+            a.setAlignmentX(Component.LEFT_ALIGNMENT);
+            topicsPanel.add(q);
+            topicsPanel.add(a);
+        }
+        topicsPanel.revalidate();
+        topicsPanel.repaint();
+    }
+}

@@ -5,6 +5,9 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 ![Java](https://img.shields.io/badge/Java-17-orange?logo=openjdk&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-8.x-4479A1?logo=mysql&logoColor=white)
 ![UI](https://img.shields.io/badge/UI-Java%20Swing-informational)
+![Maven](https://img.shields.io/badge/Build-Maven-C71A36?logo=apache-maven&logoColor=white)
+![JUnit5](https://img.shields.io/badge/Tests-JUnit%205-25A162?logo=junit5&logoColor=white)
+![Allure](https://img.shields.io/badge/Reporting-Allure-FF6C37)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen)
 ![License](https://img.shields.io/badge/License-Demo%2FInternal-lightgrey)
 
@@ -22,6 +25,7 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Database Overview](#database-overview)
 - [Seed / Utility Scripts](#seed--utility-scripts)
 - [Testing](#testing)
+- [Test Reporting (Allure)](#test-reporting-allure)
 - [REST API](#rest-api)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -72,16 +76,18 @@ NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rin
 | Database | MySQL 8.x |
 | DB Driver | MySQL Connector/J 9.7.0 |
 | Printing | `java.awt.print` (native OS print dialog) |
-| Build/IDE | Eclipse (or any IDE with a standard `src`/`lib` layout) |
-| Testing | JUnit 5 (Jupiter) + JUnit 4 (Vintage), run via `org.junit.platform.console.ConsoleLauncher` |
+| Build/IDE | Maven (standard `src/main/java` + `src/test/java` layout), imports cleanly into Eclipse |
+| Testing | JUnit 5 (Jupiter), run via Maven Surefire (`mvn test`) or the vendored command-line path (`run_tests.bat`) |
+| Test Reporting | Allure (`allure-maven` + `allure-junit5`), generated from `mvn test allure:report` |
 | REST API | `com.sun.net.httpserver.HttpServer` (JDK built-in), hand-rolled JSON — no external framework |
 
 ## Prerequisites
 
 - JDK 17 or later
 - MySQL Server 8.x
+- Maven 3.8+ (for `mvn test`, dependency-managed builds, and Allure reports) — optional; the app itself and the vendored test path have zero external dependencies
 - An IDE (Eclipse recommended) or a plain `javac`/`java` toolchain
-- Windows, macOS, or Linux (batch launcher scripts are Windows-specific; other platforms can run the compiled classes directly)
+- Windows, macOS, or Linux (batch launcher scripts are Windows-specific; other platforms can run the compiled classes/Maven directly)
 
 ## Installation
 
@@ -161,9 +167,13 @@ lib/
   junit5/                    Vendored JUnit 5/4 + deps (see Testing)
 postman/
   NY-Coffee-Co-API.postman_collection.json
+pom.xml
+  Maven build file — dependencies (MySQL driver, JUnit 5, Allure), compiler/surefire/allure plugin config
 target/
-  classes/        Compiled main output
-  test-classes/   Compiled test output
+  classes/                       Compiled main output
+  test-classes/                  Compiled test output
+  allure-results/                Raw per-test JSON results (mvn test)
+  site/allure-maven-plugin/      Generated Allure HTML report (mvn test allure:report)
 ```
 
 ## Database Overview
@@ -197,15 +207,23 @@ Unit tests live under `src/test/java/com/possystem/...` and cover the pure, DB-f
 - `JsonTest` — round-trip correctness of the hand-rolled JSON reader/writer used by the REST API.
 - `ApiIntegrationTest` — live HTTP tests against a running `ApiServer` (see below); auto-skips if the server isn't reachable, so it never fails an offline test run.
 
-Because this project has no route to Maven Central (see [REST API](#rest-api)), the test framework itself is vendored as plain jars under `lib/junit5/` (JUnit 5 Jupiter/Platform, JUnit 4 Vintage, and their transitive deps — apiguardian, opentest4j, picocli — pulled from the Ubuntu/Debian package archive rather than Maven).
+The main application has zero external dependencies beyond the JDK and the MySQL driver — that design goal carries through to how tests can be run, in two equivalent ways:
 
-Run the full suite:
+**Option A — Maven (recommended):**
+
+```bash
+mvn test
+```
+
+Runs the full suite via Surefire with real, dependency-managed JUnit 5 (`org.junit.jupiter:*`, `org.junit.platform:junit-platform-launcher`) resolved from Maven Central. This is also what Eclipse's own JUnit runner uses under the hood once the project is imported as a Maven project (`Run As → JUnit Test` / `Maven build...` with goal `test`).
+
+**Option B — vendored, zero-network fallback:**
 
 ```bash
 run_tests.bat
 ```
 
-or manually:
+Compiles and runs the exact same tests using JUnit 5 Jupiter/Platform jars vendored under `lib/junit5/` (pulled from the Ubuntu/Debian package archive rather than Maven Central), via `org.junit.platform.console.ConsoleLauncher`. Useful in environments without Maven Central access. Equivalent manual steps:
 
 ```bash
 javac -d target/classes -cp lib/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0.jar $(find src/main/java/com -name "*.java")
@@ -213,9 +231,31 @@ javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -
 java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
 ```
 
+Both paths run the same 30 tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`, and the live-server `ApiIntegrationTest`, which auto-skips if `ApiServer` isn't running).
+
+## Test Reporting (Allure)
+
+Test results can be rendered as an interactive [Allure](https://allurereport.org/) HTML dashboard (pass/fail breakdown, per-suite timing, trend graph) via the `allure-maven` + `allure-junit5` plugins configured in `pom.xml`.
+
+Generate a static report:
+
+```bash
+mvn test allure:report
+```
+
+Open `target/site/allure-maven-plugin/index.html` in a browser, or from Eclipse: right-click the project → **Run As → Maven build...** → Goals: `test allure:report`.
+
+For a live, auto-refreshing dashboard instead of a static file:
+
+```bash
+mvn allure:serve
+```
+
+This downloads the Allure commandline tool on first run (cached locally under `.allure/`, git-ignored) and opens the report directly in your browser.
+
 ## REST API
 
-`com.possystem.api.ApiServer` exposes the same DAO/service layer over HTTP/JSON, built entirely on `com.sun.net.httpserver.HttpServer` and a hand-rolled JSON reader/writer (`com.possystem.api.Json`) — no Spring Boot or Jackson, since this project's build environment can't reach Maven Central. This keeps the API zero-dependency beyond the JDK and the existing MySQL driver.
+`com.possystem.api.ApiServer` exposes the same DAO/service layer over HTTP/JSON, built entirely on `com.sun.net.httpserver.HttpServer` and a hand-rolled JSON reader/writer (`com.possystem.api.Json`) — no Spring Boot or Jackson. This keeps the API (and the app itself) zero-dependency beyond the JDK and the MySQL driver, so it also runs and compiles fine in environments without Maven Central access; Maven/`pom.xml` is used only for the test/reporting toolchain (JUnit 5, Allure).
 
 Start it with:
 

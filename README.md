@@ -103,7 +103,7 @@ NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rin
 
 ## Configuration
 
-Set your database credentials in `src/com/possystem/config/DBConnection.java`:
+Set your database credentials in `src/main/java/com/possystem/config/DBConnection.java`:
 
 ```java
 DB_URL      = "jdbc:mysql://localhost:3306/pos_system"
@@ -141,7 +141,7 @@ Alternatively, run the provided seed scripts (see [Seed / Utility Scripts](#seed
 ## Project Structure
 
 ```
-src/com/possystem/
+src/main/java/com/possystem/
   config/     DB connection handling
   model/      Domain objects (Employee, MenuItem, Order, PayrollRun, ...)
   dao/        JDBC data-access layer (one per entity/feature area)
@@ -185,7 +185,7 @@ See `database/schema.sql` for the complete definition and sample data.
 
 ## Seed / Utility Scripts
 
-The repo includes standalone launchers (`run_*.bat`) for one-off data setup and maintenance tasks — seeding employees/payroll/deliveries/recipes/suppliers/barcodes, and migration tools for schema changes (e.g. payroll tax columns, operations tables). Each corresponds to a `main()` class under `src/com/possystem/tools/`.
+The repo includes standalone launchers (`run_*.bat`) for one-off data setup and maintenance tasks — seeding employees/payroll/deliveries/recipes/suppliers/barcodes, and migration tools for schema changes (e.g. payroll tax columns, operations tables). Each corresponds to a `main()` class under `src/main/java/com/possystem/tools/`.
 
 ## Testing
 
@@ -208,7 +208,7 @@ run_tests.bat
 or manually:
 
 ```bash
-javac -d target/classes -cp lib/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0.jar $(find src/com -name "*.java")
+javac -d target/classes -cp lib/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0/mysql-connector-j-9.7.0.jar $(find src/main/java/com -name "*.java")
 javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -name "*.java")
 java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
 ```

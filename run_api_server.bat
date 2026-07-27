@@ -7,7 +7,7 @@ set PORT=8081
 
 echo Compiling...
 if not exist "%PROJECT%\target\classes" mkdir "%PROJECT%\target\classes"
-dir /s /b "%PROJECT%\src\com\*.java" > "%TEMP%\mainsrcs.txt"
+dir /s /b "%PROJECT%\src\main\java\com\*.java" > "%TEMP%\mainsrcs.txt"
 "%JAVA_HOME%\bin\javac" -encoding UTF-8 -nowarn -d "%PROJECT%\target\classes" -cp "%MYSQL_JAR%" @"%TEMP%\mainsrcs.txt"
 if errorlevel 1 goto :error
 

@@ -3,6 +3,9 @@ target/
 bin/
 *.class
 
+# Allure commandline binary, auto-downloaded locally by the allure-maven plugin (~40MB, not source)
+.allure/
+
 # Eclipse project-local settings (keep .classpath and .project, ignore the rest)
 .settings/
 

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>NY Coffee Co. — Admin Dashboard</title>
+<style>
+  body { font-family: -apple-system, "Segoe UI", Arial, sans-serif; margin: 0; background: #1b120b; color: #f5ede1; }
+  header { background: #4b2e1e; padding: 20px 32px; display: flex; align-items: center; justify-content: space-between; }
+  header h1 { margin: 0; font-size: 20px; letter-spacing: 0.5px; }
+  #health-status { padding: 4px 12px; border-radius: 999px; font-weight: bold; font-size: 13px; }
+  #health-status.ok { background: #2e7d32; color: white; }
+  #health-status.down, #health-status.pending { background: #b71c1c; color: white; }
+  main { padding: 24px 32px; }
+  section { margin-bottom: 32px; }
+  h2 { border-bottom: 2px solid #6f4e37; padding-bottom: 6px; }
+  table { width: 100%; border-collapse: collapse; background: #241811; }
+  th, td { text-align: left; padding: 8px 12px; border-bottom: 1px solid #3a281c; }
+  th { background: #33241a; }
+  tbody tr:hover { background: #2e2015; }
+</style>
+</head>
+<body>
+<header>
+  <h1>&#9749; NY Coffee Co. — Admin Dashboard</h1>
+  <span>API status: <span id="health-status" class="pending">checking&hellip;</span></span>
+</header>
+<main>
+  <section>
+    <h2>Menu Items</h2>
+    <table id="menu-items-table">
+      <thead><tr><th>ID</th><th>Category</th><th>Name</th><th>Price</th><th>Active</th></tr></thead>
+      <tbody><tr><td colspan="5">Loading&hellip;</td></tr></tbody>
+    </table>
+  </section>
+  <section>
+    <h2>Employees</h2>
+    <table id="employees-table">
+      <thead><tr><th>ID</th><th>Name</th><th>Position</th><th>Active</th></tr></thead>
+      <tbody><tr><td colspan="4">Loading&hellip;</td></tr></tbody>
+    </table>
+  </section>
+</main>
+<script>
+  async function loadHealth() {
+    const badge = document.getElementById('health-status');
+    try {
+      const res = await fetch('/api/health');
+      const data = await res.json();
+      badge.textContent = data.status;
+      badge.className = data.status === 'ok' ? 'ok' : 'down';
+    } catch (e) {
+      badge.textContent = 'unreachable';
+      badge.className = 'down';
+    }
+  }
+
+  async function loadMenuItems() {
+    const tbody = document.querySelector('#menu-items-table tbody');
+    try {
+      const res = await fetch('/api/menu-items');
+      const data = await res.json();
+      const items = data.items || [];
+      tbody.innerHTML = '';
+      items.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${item.id}</td><td>${item.categoryName ?? ''}</td><td>${item.name}</td><td>$${item.price}</td><td>${item.active}</td>`;
+        tbody.appendChild(tr);
+      });
+      if (items.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5">No menu items found.</td></tr>';
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="5">Failed to load menu items.</td></tr>';
+    }
+  }
+
+  async function loadEmployees() {
+    const tbody = document.querySelector('#employees-table tbody');
+    try {
+      const res = await fetch('/api/employees');
+      const data = await res.json();
+      const employees = data.employees || [];
+      tbody.innerHTML = '';
+      employees.forEach(emp => {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${emp.id}</td><td>${emp.fullName}</td><td>${emp.position ?? ''}</td><td>${emp.active}</td>`;
+        tbody.appendChild(tr);
+      });
+      if (employees.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="4">No employees found.</td></tr>';
+      }
+    } catch (e) {
+      tbody.innerHTML = '<tr><td colspan="4">Failed to load employees.</td></tr>';
+    }
+  }
+
+  loadHealth();
+  loadMenuItems();
+  loadEmployees();
+</script>
+</body>
+</html>

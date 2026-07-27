@@ -55,9 +55,11 @@ public class ApiServer {
         server.createContext("/api/employees", this::handleEmployees);
         server.createContext("/api/orders", this::handleOrders);
         server.createContext("/api/checkout", this::handleCheckout);
+        server.createContext("/admin", this::handleAdminPage);
         server.setExecutor(Executors.newFixedThreadPool(8));
         server.start();
         System.out.println("NY Coffee Co. API listening on http://localhost:" + port + "/api/health");
+        System.out.println("Admin dashboard at http://localhost:" + port + "/admin");
     }
 
     // ---------- Handlers ----------
@@ -249,6 +251,33 @@ public class ApiServer {
             sendJson(ex, 409, Json.obj("error", e.getMessage()));
         } catch (RuntimeException e) {
             sendJson(ex, 500, Json.obj("error", e.getMessage()));
+        }
+    }
+
+    /**
+     * Serves a single static page (src/main/resources/webapp/index.html) — a lightweight,
+     * dependency-free admin dashboard that fetches /api/health, /api/menu-items, and
+     * /api/employees client-side and renders them into tables. Exists mainly to give the
+     * Selenium E2E test (com.possystem.web.AdminPanelUiTest) a real page to drive.
+     */
+    private void handleAdminPage(HttpExchange ex) throws IOException {
+        if (!requireMethod(ex, "GET")) return;
+        byte[] html;
+        try (InputStream is = getClass().getResourceAsStream("/webapp/index.html")) {
+            if (is == null) {
+                sendJson(ex, 500, Json.obj("error", "admin page resource not found on classpath"));
+                return;
+            }
+            ByteArrayOutputStream buf = new ByteArrayOutputStream();
+            byte[] chunk = new byte[4096];
+            int n;
+            while ((n = is.read(chunk)) != -1) buf.write(chunk, 0, n);
+            html = buf.toByteArray();
+        }
+        ex.getResponseHeaders().set("Content-Type", "text/html; charset=utf-8");
+        ex.sendResponseHeaders(200, html.length);
+        try (OutputStream os = ex.getResponseBody()) {
+            os.write(html);
         }
     }
 

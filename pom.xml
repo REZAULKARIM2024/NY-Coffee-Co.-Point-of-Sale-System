@@ -9,6 +9,9 @@
     <junit.jupiter.version>5.11.0</junit.jupiter.version>
     <junit.platform.version>1.11.0</junit.platform.version>
     <allure.version>2.29.0</allure.version>
+    <cucumber.version>7.18.0</cucumber.version>
+    <selenium.version>4.24.0</selenium.version>
+    <webdrivermanager.version>5.9.2</webdrivermanager.version>
   </properties>
 
   <dependencies>
@@ -47,6 +50,49 @@
       <groupId>io.qameta.allure</groupId>
       <artifactId>allure-junit5</artifactId>
       <version>${allure.version}</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Cucumber BDD, running as a JUnit 5 Suite via cucumber-junit-platform-engine -->
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-java</artifactId>
+      <version>${cucumber.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.cucumber</groupId>
+      <artifactId>cucumber-junit-platform-engine</artifactId>
+      <version>${cucumber.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.junit.platform</groupId>
+      <artifactId>junit-platform-suite</artifactId>
+      <version>${junit.platform.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <!-- Only used for org.junit.Assume.assumeTrue(), which Cucumber recognizes as a SKIPPED
+         (not failed) result — lets BDD scenarios skip gracefully when the API server isn't
+         running, the same convention ApiIntegrationTest already uses via JUnit 5 Assumptions. -->
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
+    </dependency>
+
+    <!-- Selenium E2E against the new /admin dashboard -->
+    <dependency>
+      <groupId>org.seleniumhq.selenium</groupId>
+      <artifactId>selenium-java</artifactId>
+      <version>${selenium.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>io.github.bonigarcia</groupId>
+      <artifactId>webdrivermanager</artifactId>
+      <version>${webdrivermanager.version}</version>
       <scope>test</scope>
     </dependency>
   </dependencies>

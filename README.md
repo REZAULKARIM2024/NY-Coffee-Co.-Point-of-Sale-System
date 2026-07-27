@@ -8,6 +8,9 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 ![Maven](https://img.shields.io/badge/Build-Maven-C71A36?logo=apache-maven&logoColor=white)
 ![JUnit5](https://img.shields.io/badge/Tests-JUnit%205-25A162?logo=junit5&logoColor=white)
 ![Allure](https://img.shields.io/badge/Reporting-Allure-FF6C37)
+![Cucumber](https://img.shields.io/badge/BDD-Cucumber-23D96C?logo=cucumber&logoColor=white)
+![Selenium](https://img.shields.io/badge/E2E-Selenium%20WebDriver-43B02A?logo=selenium&logoColor=white)
+[![CI](https://github.com/REZAULKARIM2024/NY-Coffee-Co.-Point-of-Sale-System/actions/workflows/ci.yml/badge.svg)](https://github.com/REZAULKARIM2024/NY-Coffee-Co.-Point-of-Sale-System/actions/workflows/ci.yml)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen)
 ![License](https://img.shields.io/badge/License-Demo%2FInternal-lightgrey)
 
@@ -26,7 +29,10 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Seed / Utility Scripts](#seed--utility-scripts)
 - [Testing](#testing)
 - [Test Reporting (Allure)](#test-reporting-allure)
+- [BDD & E2E Testing (Cucumber, Selenium)](#bdd--e2e-testing-cucumber-selenium)
 - [REST API](#rest-api)
+- [Web Admin Dashboard](#web-admin-dashboard)
+- [CI/CD Pipeline](#cicd-pipeline)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -78,8 +84,12 @@ NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rin
 | Printing | `java.awt.print` (native OS print dialog) |
 | Build/IDE | Maven (standard `src/main/java` + `src/test/java` layout), imports cleanly into Eclipse |
 | Testing | JUnit 5 (Jupiter), run via Maven Surefire (`mvn test`) or the vendored command-line path (`run_tests.bat`) |
+| BDD | Cucumber 7 (`cucumber-java` + `cucumber-junit-platform-engine`), Gherkin feature files against the REST API |
+| UI Automation | Selenium WebDriver 4 + WebDriverManager, headless Chrome, against the `/admin` dashboard |
 | Test Reporting | Allure (`allure-maven` + `allure-junit5`), generated from `mvn test allure:report` |
 | REST API | `com.sun.net.httpserver.HttpServer` (JDK built-in), hand-rolled JSON — no external framework |
+| Web Admin UI | Static HTML/vanilla JS dashboard (`src/main/resources/webapp/index.html`), served by `ApiServer` at `/admin` |
+| CI/CD | GitHub Actions (`.github/workflows/ci.yml`) — MySQL service container, full test suite, Allure report artifact |
 
 ## Prerequisites
 
@@ -156,19 +166,27 @@ src/main/java/com/possystem/
   gui/        Swing screens (POSPanel, PayrollPanel, AboutPanel, ...)
   util/       Shared UI theming, i18n, printable art, helpers
   tools/      Standalone seed/migration utilities (run via run_*.bat)
+  resources/webapp/index.html   Static /admin dashboard (vanilla HTML/JS, no build step)
 src/test/java/com/possystem/
   service/    Unit tests for POSService / PayrollService
   model/      Unit tests for CartItem
   api/        Unit tests for Json + live ApiIntegrationTest
+  api/bdd/    Cucumber step definitions + JUnit 5 Suite runner (ApiCucumberTest)
+  web/        Selenium E2E test for the /admin dashboard (AdminPanelUiTest)
+src/test/resources/features/api/
+  health.feature, menu-items.feature, checkout.feature   Gherkin scenarios for the REST API
 database/
-  schema.sql  Full schema + sample seed data
+  schema.sql   Full schema + sample seed data
+  ci-seed.sql  Minimal employee/user fixture for CI and fresh local databases
 lib/
   mysql-connector-j-9.7.0/   JDBC driver jar
   junit5/                    Vendored JUnit 5/4 + deps (see Testing)
 postman/
   NY-Coffee-Co-API.postman_collection.json
+.github/workflows/
+  ci.yml   GitHub Actions pipeline (MySQL service container, full test suite, Allure artifact)
 pom.xml
-  Maven build file — dependencies (MySQL driver, JUnit 5, Allure), compiler/surefire/allure plugin config
+  Maven build file — dependencies (MySQL driver, JUnit 5, Cucumber, Selenium, Allure), compiler/surefire/allure plugin config
 target/
   classes/                       Compiled main output
   test-classes/                  Compiled test output
@@ -207,6 +225,8 @@ Unit tests live under `src/test/java/com/possystem/...` and cover the pure, DB-f
 - `JsonTest` — round-trip correctness of the hand-rolled JSON reader/writer used by the REST API.
 - `ApiIntegrationTest` — live HTTP tests against a running `ApiServer` (see below); auto-skips if the server isn't reachable, so it never fails an offline test run.
 
+On top of these, `ApiCucumberTest` (Cucumber BDD scenarios) and `AdminPanelUiTest` (Selenium E2E) also run as part of `mvn test` — see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium) below. Like `ApiIntegrationTest`, both skip gracefully rather than fail when `ApiServer` isn't running, so the full suite — unit, live-integration, BDD, and UI — stays green in any environment, and runs for real once the server (and, for the CI job, MySQL) is up.
+
 The main application has zero external dependencies beyond the JDK and the MySQL driver — that design goal carries through to how tests can be run, in two equivalent ways:
 
 **Option A — Maven (recommended):**
@@ -231,7 +251,7 @@ javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -
 java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
 ```
 
-Both paths run the same 30 tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`, and the live-server `ApiIntegrationTest`, which auto-skips if `ApiServer` isn't running).
+Both paths run the same 30 DB-independent unit tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`). `run_tests.bat` only compiles/runs that offline suite; `mvn test` additionally picks up the live-server tests (`ApiIntegrationTest`, `ApiCucumberTest`, `AdminPanelUiTest`), which auto-skip if `ApiServer` isn't running.
 
 ## Test Reporting (Allure)
 
@@ -252,6 +272,29 @@ mvn allure:serve
 ```
 
 This downloads the Allure commandline tool on first run (cached locally under `.allure/`, git-ignored) and opens the report directly in your browser.
+
+## BDD & E2E Testing (Cucumber, Selenium)
+
+Two more test layers sit on top of the unit suite and the live HTTP integration test, both exercising the REST API and the `/admin` dashboard through real, user-facing interfaces rather than direct Java calls:
+
+**Cucumber BDD** (`src/test/resources/features/api/*.feature`, step definitions in `src/test/java/com/possystem/api/bdd/`) — Gherkin scenarios covering the health check, menu-item listing/404, and the checkout happy-path/error-path, run automatically as part of `mvn test` via the JUnit 5 Suite `ApiCucumberTest`:
+
+```gherkin
+Scenario: Checking out the first available menu item succeeds and the order can be fetched
+  Given I look up the first active menu item
+  When I checkout that menu item as user 1
+  Then the response status should be 201
+  And I can fetch the resulting order and it contains at least 1 item
+```
+
+**Selenium E2E** (`src/test/java/com/possystem/web/AdminPanelUiTest.java`) — drives headless Chrome (auto-managed by WebDriverManager, no manual driver download needed) against the `/admin` dashboard, asserting the health badge renders "ok" and the menu-items table populates from the live API.
+
+Both follow the same skip-not-fail convention as `ApiIntegrationTest`: if `ApiServer` isn't reachable at `http://localhost:8081`, every scenario/test is skipped via `Assume`/`Assumptions`, not failed. To run them for real:
+
+```bash
+run_api_server.bat      # in one terminal
+mvn test                 # in another — BDD + Selenium tests now execute instead of skipping
+```
 
 ## REST API
 
@@ -289,6 +332,26 @@ Example checkout request:
 ```
 
 A ready-to-import Postman collection with example requests and test assertions (status codes, response shape) is at `postman/NY-Coffee-Co-API.postman_collection.json`. Set its `baseUrl` variable if not running on the default port.
+
+## Web Admin Dashboard
+
+`ApiServer` also serves a small static dashboard at `/admin` (`src/main/resources/webapp/index.html`) — plain HTML/CSS/vanilla JS, no build step or framework, consistent with the rest of the API layer's zero-dependency philosophy. On load it calls `/api/health`, `/api/menu-items`, and `/api/employees` client-side and renders the results into tables, giving a quick browser-based view into the live system without opening the Swing app. This page also exists to give the Selenium E2E test something real to drive.
+
+```bash
+run_api_server.bat
+# then open http://localhost:8081/admin
+```
+
+## CI/CD Pipeline
+
+`.github/workflows/ci.yml` runs the full test pyramid on every push/PR to `main`:
+
+1. Spins up a MySQL 8 service container and loads `database/schema.sql` + `database/ci-seed.sql` (a minimal employee/user fixture so checkout-dependent tests have valid data on a brand-new database).
+2. Compiles the project and starts `ApiServer` in the background, polling `/api/health` until it's ready.
+3. Runs `mvn test allure:report` — at this point the API server and database are both live, so the full suite executes for real: the 30 offline unit tests, the live `ApiIntegrationTest`, the Cucumber BDD scenarios, and the Selenium E2E tests against `/admin` (headless Chrome, already present on GitHub's Ubuntu runners).
+4. Uploads the generated Allure report and the API server log as build artifacts, even if a step fails.
+
+The badge at the top of this README reflects the latest run. `database/ci-seed.sql` is also useful locally — after loading `schema.sql` on a fresh database, run it too to get a valid `userId=1` for testing `/api/checkout` manually or via Postman without creating an employee/user through the UI first.
 
 ## Roadmap
 

@@ -1,0 +1,82 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Trf123
+          MYSQL_DATABASE: pos_system
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h127.0.0.1 -uroot -pTrf123"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Load database schema + CI fixture data
+        run: |
+          for i in $(seq 1 30); do
+            mysqladmin ping -h127.0.0.1 -P3306 -uroot -pTrf123 --silent && break
+            echo "Waiting for MySQL to accept connections..."
+            sleep 2
+          done
+          mysql -h127.0.0.1 -P3306 -uroot -pTrf123 pos_system < database/schema.sql
+          mysql -h127.0.0.1 -P3306 -uroot -pTrf123 pos_system < database/ci-seed.sql
+
+      - name: Compile
+        run: mvn -B compile
+
+      - name: Start the REST API server in the background
+        run: |
+          mvn -B org.apache.maven.plugins:maven-dependency-plugin:3.6.1:build-classpath -Dmdep.outputFile=target/cp.txt
+          nohup java -cp "target/classes:$(cat target/cp.txt)" com.possystem.api.ApiServer 8081 > target/api-server.log 2>&1 &
+          echo "Waiting for the API server to report healthy..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:8081/api/health > /dev/null; then
+              echo "API server is up."
+              break
+            fi
+            sleep 1
+          done
+
+      - name: Run full test suite (JUnit 5 + Cucumber BDD + Selenium E2E) and build Allure report
+        run: mvn -B test allure:report
+
+      - name: Upload Allure report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-report
+          path: target/site/allure-maven-plugin
+          retention-days: 14
+
+      - name: Upload API server log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-server-log
+          path: target/api-server.log
+          retention-days: 14

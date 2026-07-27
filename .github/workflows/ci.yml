@@ -62,8 +62,8 @@ jobs:
             sleep 1
           done
 
-      - name: Run full test suite (JUnit 5 + Cucumber BDD + Selenium E2E) and build Allure report
-        run: mvn -B test allure:report
+      - name: Run full test suite (JUnit 5 + Cucumber BDD IT + Selenium E2E) and build Allure report
+        run: mvn -B verify allure:report
 
       - name: Upload Allure report
         if: always()

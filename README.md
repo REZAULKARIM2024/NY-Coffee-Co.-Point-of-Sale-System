@@ -225,7 +225,9 @@ Unit tests live under `src/test/java/com/possystem/...` and cover the pure, DB-f
 - `JsonTest` — round-trip correctness of the hand-rolled JSON reader/writer used by the REST API.
 - `ApiIntegrationTest` — live HTTP tests against a running `ApiServer` (see below); auto-skips if the server isn't reachable, so it never fails an offline test run.
 
-On top of these, `ApiCucumberTest` (Cucumber BDD scenarios) and `AdminPanelUiTest` (Selenium E2E) also run as part of `mvn test` — see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium) below. Like `ApiIntegrationTest`, both skip gracefully rather than fail when `ApiServer` isn't running, so the full suite — unit, live-integration, BDD, and UI — stays green in any environment, and runs for real once the server (and, for the CI job, MySQL) is up.
+On top of these, `AdminPanelUiTest` (Selenium E2E) also runs as part of `mvn test` — see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium) below. Like `ApiIntegrationTest`, it skips gracefully rather than fails when `ApiServer` isn't running, so `mvn test` stays green in any environment.
+
+The Cucumber BDD scenarios (`ApiCucumberIT`) are the one exception: Cucumber's JUnit Platform engine doesn't turn an Assumptions-based skip thrown from a `@Before` hook into a real SKIPPED result the way plain JUnit 5 tests do — it surfaces as an ERROR instead. Rather than let that break the default build, `ApiCucumberIT` is wired to **maven-failsafe-plugin** instead of Surefire, so it's excluded from `mvn test` entirely and only runs via `mvn verify` — which should only be run once the API server is actually up (see below).
 
 The main application has zero external dependencies beyond the JDK and the MySQL driver — that design goal carries through to how tests can be run, in two equivalent ways:
 
@@ -251,7 +253,7 @@ javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -
 java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
 ```
 
-Both paths run the same 30 DB-independent unit tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`). `run_tests.bat` only compiles/runs that offline suite; `mvn test` additionally picks up the live-server tests (`ApiIntegrationTest`, `ApiCucumberTest`, `AdminPanelUiTest`), which auto-skip if `ApiServer` isn't running.
+Both paths run the same 30 DB-independent unit tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`). `run_tests.bat` only compiles/runs that offline suite; `mvn test` additionally picks up `ApiIntegrationTest` and `AdminPanelUiTest`, both of which auto-skip if `ApiServer` isn't running. The Cucumber BDD suite (`ApiCucumberIT`) is separate again — see below.
 
 ## Test Reporting (Allure)
 
@@ -277,7 +279,7 @@ This downloads the Allure commandline tool on first run (cached locally under `.
 
 Two more test layers sit on top of the unit suite and the live HTTP integration test, both exercising the REST API and the `/admin` dashboard through real, user-facing interfaces rather than direct Java calls:
 
-**Cucumber BDD** (`src/test/resources/features/api/*.feature`, step definitions in `src/test/java/com/possystem/api/bdd/`) — Gherkin scenarios covering the health check, menu-item listing/404, and the checkout happy-path/error-path, run automatically as part of `mvn test` via the JUnit 5 Suite `ApiCucumberTest`:
+**Cucumber BDD** (`src/test/resources/features/api/*.feature`, step definitions in `src/test/java/com/possystem/api/bdd/`) — Gherkin scenarios covering the health check, menu-item listing/404, and the checkout happy-path/error-path, run via the JUnit 5 Suite `ApiCucumberIT`:
 
 ```gherkin
 Scenario: Checking out the first available menu item succeeds and the order can be fetched
@@ -287,13 +289,14 @@ Scenario: Checking out the first available menu item succeeds and the order can 
   And I can fetch the resulting order and it contains at least 1 item
 ```
 
-**Selenium E2E** (`src/test/java/com/possystem/web/AdminPanelUiTest.java`) — drives headless Chrome (auto-managed by WebDriverManager, no manual driver download needed) against the `/admin` dashboard, asserting the health badge renders "ok" and the menu-items table populates from the live API.
+**Selenium E2E** (`src/test/java/com/possystem/web/AdminPanelUiTest.java`) — drives headless Chrome (auto-managed by WebDriverManager, no manual driver download needed) against the `/admin` dashboard, asserting the health badge renders "ok" and the menu-items table populates from the live API. Runs as part of `mvn test`, and skips gracefully (not failed) if `ApiServer` isn't reachable — same convention as `ApiIntegrationTest`.
 
-Both follow the same skip-not-fail convention as `ApiIntegrationTest`: if `ApiServer` isn't reachable at `http://localhost:8081`, every scenario/test is skipped via `Assume`/`Assumptions`, not failed. To run them for real:
+`ApiCucumberIT` is the odd one out: Cucumber's JUnit Platform engine doesn't translate an Assumptions-based skip thrown from a `@Before` hook into a real SKIPPED result — it comes through as an ERROR, which would break the default build. So instead of running under Surefire (`mvn test`), it's bound to **maven-failsafe-plugin** and only runs via `mvn verify`. That means: **`mvn verify` must only be run once the API server is actually up** — unlike the other live tests, it does not skip cleanly if the server is down.
 
 ```bash
 run_api_server.bat      # in one terminal
-mvn test                 # in another — BDD + Selenium tests now execute instead of skipping
+mvn test                 # unit tests + ApiIntegrationTest + AdminPanelUiTest (all skip cleanly if server is down)
+mvn verify                # additionally runs the Cucumber BDD suite — server must be running first
 ```
 
 ## REST API
@@ -348,7 +351,7 @@ run_api_server.bat
 
 1. Spins up a MySQL 8 service container and loads `database/schema.sql` + `database/ci-seed.sql` (a minimal employee/user fixture so checkout-dependent tests have valid data on a brand-new database).
 2. Compiles the project and starts `ApiServer` in the background, polling `/api/health` until it's ready.
-3. Runs `mvn test allure:report` — at this point the API server and database are both live, so the full suite executes for real: the 30 offline unit tests, the live `ApiIntegrationTest`, the Cucumber BDD scenarios, and the Selenium E2E tests against `/admin` (headless Chrome, already present on GitHub's Ubuntu runners).
+3. Runs `mvn verify allure:report` — at this point the API server and database are both live, so the full suite executes for real: the 30 offline unit tests, the live `ApiIntegrationTest`, the Selenium E2E tests against `/admin` (headless Chrome, already present on GitHub's Ubuntu runners), and — via `verify`/maven-failsafe-plugin — the Cucumber BDD suite (`ApiCucumberIT`), which needs the server up to run at all (see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium)).
 4. Uploads the generated Allure report and the API server log as build artifacts, even if a step fails.
 
 The badge at the top of this README reflects the latest run. `database/ci-seed.sql` is also useful locally — after loading `schema.sql` on a fresh database, run it too to get a valid `userId=1` for testing `/api/checkout` manually or via Postman without creating an employee/user through the UI first.

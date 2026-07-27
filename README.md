@@ -19,6 +19,7 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 ## Table of Contents
 
 - [Overview](#overview)
+- [Screenshots](#screenshots)
 - [Features](#features)
 - [Tech Stack](#tech-stack)
 - [Prerequisites](#prerequisites)
@@ -47,6 +48,16 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 ## Overview
 
 NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rings up orders from a department-tabbed menu (Beverages, Featured, Bakery, Sandwiches, Retail, Local), takes payment (cash, card, gift card, or split tender), and the system handles everything downstream — inventory deduction, order source/type tracking, delivery queueing, and loyalty points — inside atomic database transactions. Managers and admins get additional screens for staffing, payroll, purchasing, and reporting.
+
+## Screenshots
+
+| POS / Checkout | Payroll |
+|---|---|
+| ![POS / Checkout screen](docs/screenshots/pos-checkout.jpg) | ![Payroll screen](docs/screenshots/payroll.jpg) |
+
+**Web Admin Dashboard** ([more on this below](#web-admin-dashboard)):
+
+![Admin dashboard](docs/screenshots/admin-dashboard.jpg)
 
 ## Features
 

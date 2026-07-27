@@ -11,6 +11,8 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 ![Cucumber](https://img.shields.io/badge/BDD-Cucumber-23D96C?logo=cucumber&logoColor=white)
 ![Selenium](https://img.shields.io/badge/E2E-Selenium%20WebDriver-43B02A?logo=selenium&logoColor=white)
 [![CI](https://github.com/REZAULKARIM2024/NY-Coffee-Co.-Point-of-Sale-System/actions/workflows/ci.yml/badge.svg)](https://github.com/REZAULKARIM2024/NY-Coffee-Co.-Point-of-Sale-System/actions/workflows/ci.yml)
+![Coverage](https://img.shields.io/badge/Coverage-JaCoCo-6DB33F?logo=jacoco&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 ![Status](https://img.shields.io/badge/Status-Active%20Development-brightgreen)
 ![License](https://img.shields.io/badge/License-Demo%2FInternal-lightgrey)
 
@@ -28,11 +30,15 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Database Overview](#database-overview)
 - [Seed / Utility Scripts](#seed--utility-scripts)
 - [Testing](#testing)
+- [Test Architecture: Tagging & Parallel Execution](#test-architecture-tagging--parallel-execution)
+- [Code Coverage (JaCoCo)](#code-coverage-jacoco)
 - [Test Reporting (Allure)](#test-reporting-allure)
 - [BDD & E2E Testing (Cucumber, Selenium)](#bdd--e2e-testing-cucumber-selenium)
 - [REST API](#rest-api)
 - [Web Admin Dashboard](#web-admin-dashboard)
+- [Running with Docker](#running-with-docker)
 - [CI/CD Pipeline](#cicd-pipeline)
+- [Test Strategy](#test-strategy)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -90,6 +96,8 @@ NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rin
 | REST API | `com.sun.net.httpserver.HttpServer` (JDK built-in), hand-rolled JSON — no external framework |
 | Web Admin UI | Static HTML/vanilla JS dashboard (`src/main/resources/webapp/index.html`), served by `ApiServer` at `/admin` |
 | CI/CD | GitHub Actions (`.github/workflows/ci.yml`) — MySQL service container, full test suite, Allure report artifact |
+| Code Coverage | JaCoCo, scoped to unit-tested classes, enforced via a quality gate on `mvn verify` |
+| Containerization | Docker Compose (`docker-compose.yml`) — MySQL + API server, one-command local spin-up |
 
 ## Prerequisites
 
@@ -171,13 +179,15 @@ src/test/java/com/possystem/
   service/    Unit tests for POSService / PayrollService
   model/      Unit tests for CartItem
   api/        Unit tests for Json + live ApiIntegrationTest
-  api/bdd/    Cucumber step definitions + JUnit 5 Suite runner (ApiCucumberTest)
+  api/bdd/    Cucumber step definitions + JUnit 5 Suite runner (ApiCucumberIT)
   web/        Selenium E2E test for the /admin dashboard (AdminPanelUiTest)
 src/test/resources/features/api/
   health.feature, menu-items.feature, checkout.feature   Gherkin scenarios for the REST API
+src/test/resources/
+  junit-platform.properties   Class-level parallel execution config
 database/
   schema.sql   Full schema + sample seed data
-  ci-seed.sql  Minimal employee/user fixture for CI and fresh local databases
+  ci-seed.sql  Minimal employee/user fixture for CI, Docker, and fresh local databases
 lib/
   mysql-connector-j-9.7.0/   JDBC driver jar
   junit5/                    Vendored JUnit 5/4 + deps (see Testing)
@@ -185,13 +195,18 @@ postman/
   NY-Coffee-Co-API.postman_collection.json
 .github/workflows/
   ci.yml   GitHub Actions pipeline (MySQL service container, full test suite, Allure artifact)
+Dockerfile, docker-compose.yml
+  One-command local spin-up of the API server + MySQL (see Running with Docker)
+TEST_STRATEGY.md
+  The reasoning behind the test pyramid, coverage scoping, tagging, and CI split
 pom.xml
-  Maven build file — dependencies (MySQL driver, JUnit 5, Cucumber, Selenium, Allure), compiler/surefire/allure plugin config
+  Maven build file — dependencies (MySQL driver, JUnit 5, Cucumber, Selenium, JaCoCo, Allure), compiler/surefire/failsafe/jacoco/allure plugin config
 target/
   classes/                       Compiled main output
   test-classes/                  Compiled test output
   allure-results/                Raw per-test JSON results (mvn test)
   site/allure-maven-plugin/      Generated Allure HTML report (mvn test allure:report)
+  site/jacoco/                   Generated JaCoCo coverage HTML report (mvn test jacoco:report)
 ```
 
 ## Database Overview
@@ -253,7 +268,40 @@ javac -d target/test-classes -cp "target/classes;lib/junit5/*" $(find src/test -
 java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --classpath target/test-classes --scan-classpath
 ```
 
-Both paths run the same 30 DB-independent unit tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest`). `run_tests.bat` only compiles/runs that offline suite; `mvn test` additionally picks up `ApiIntegrationTest` and `AdminPanelUiTest`, both of which auto-skip if `ApiServer` isn't running. The Cucumber BDD suite (`ApiCucumberIT`) is separate again — see below.
+Both paths run the same DB-independent unit tests (`POSServiceTest`, `PayrollServiceTest`, `CartItemTest`, `JsonTest` — including their `@ParameterizedTest` boundary cases; run `mvn test` and check the Surefire summary for the current total). `run_tests.bat` only compiles/runs that offline suite; `mvn test` additionally picks up `ApiIntegrationTest` and `AdminPanelUiTest`, both of which auto-skip if `ApiServer` isn't running. The Cucumber BDD suite (`ApiCucumberIT`) is separate again — see below.
+
+## Test Architecture: Tagging & Parallel Execution
+
+Every test class carries a JUnit 5 `@Tag` — `unit`, `api`, `ui`, or `bdd` (plus `integration` on
+the three that need a live server) — and Surefire/Failsafe both read a `groups` Maven property
+(empty by default, so nothing is filtered) for selective runs:
+
+```bash
+mvn test -Dgroups=unit          # fast, no server needed
+mvn verify -Dgroups=unit,api    # unit + live API tests, skip the browser-driven UI test
+```
+
+Class-level parallel execution was also tried (`src/test/resources/junit-platform.properties`) but
+turned back off after it made Surefire's console reporter misattribute per-class test counts across
+threads — see [TEST_STRATEGY.md](TEST_STRATEGY.md) for what was observed and why it's disabled by
+default rather than removed.
+
+## Code Coverage (JaCoCo)
+
+`mvn verify` runs a JaCoCo coverage gate scoped to the classes with real unit tests
+(`com.possystem.service.*`, `CartItem`, `Json`) — not the whole codebase, since the GUI/DAO/tools
+layers were never meant to be unit-tested (see [TEST_STRATEGY.md](TEST_STRATEGY.md)). The gate is
+set to 10%, just under a measured ~12% baseline — `POSService`/`PayrollService`'s DB-touching
+orchestration methods (`checkout`, `runPayroll`) pull the ratio down since they only ever run via
+the separate `ApiServer` process, never inside the instrumented Maven JVM.
+
+```bash
+mvn test jacoco:report
+```
+
+Open `target/site/jacoco/index.html` for the HTML report. The number is deterministic regardless
+of whether `ApiServer` is running — it executes as a separate process, so its code never runs
+inside the instrumented Maven JVM either way.
 
 ## Test Reporting (Allure)
 
@@ -345,16 +393,38 @@ run_api_server.bat
 # then open http://localhost:8081/admin
 ```
 
+## Running with Docker
+
+For trying the API + admin dashboard without installing Java/Maven/MySQL locally:
+
+```bash
+docker compose up --build
+```
+
+This brings up MySQL (auto-loading `database/schema.sql` + `database/ci-seed.sql` on first start)
+and the API server together, exposed at `http://localhost:8081` — same endpoints, same `/admin`
+dashboard. Only the REST API is containerized; the Swing desktop app needs a display and isn't a
+good fit for a container (see [TEST_STRATEGY.md](TEST_STRATEGY.md)). `DBConnection` reads its
+connection details from environment variables (`DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`,
+`DB_PASSWORD`) with the original hardcoded values as defaults, so this required no changes to any
+existing non-Docker workflow.
+
 ## CI/CD Pipeline
 
 `.github/workflows/ci.yml` runs the full test pyramid on every push/PR to `main`:
 
 1. Spins up a MySQL 8 service container and loads `database/schema.sql` + `database/ci-seed.sql` (a minimal employee/user fixture so checkout-dependent tests have valid data on a brand-new database).
 2. Compiles the project and starts `ApiServer` in the background, polling `/api/health` until it's ready.
-3. Runs `mvn verify allure:report` — at this point the API server and database are both live, so the full suite executes for real: the 30 offline unit tests, the live `ApiIntegrationTest`, the Selenium E2E tests against `/admin` (headless Chrome, already present on GitHub's Ubuntu runners), and — via `verify`/maven-failsafe-plugin — the Cucumber BDD suite (`ApiCucumberIT`), which needs the server up to run at all (see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium)).
+3. Runs `mvn verify allure:report` — at this point the API server and database are both live, so the full suite executes for real: the offline unit tests (including JaCoCo's coverage gate), the live `ApiIntegrationTest`, the Selenium E2E tests against `/admin` (headless Chrome, already present on GitHub's Ubuntu runners), and — via `verify`/maven-failsafe-plugin — the Cucumber BDD suite (`ApiCucumberIT`), which needs the server up to run at all (see [BDD & E2E Testing](#bdd--e2e-testing-cucumber-selenium)).
 4. Uploads the generated Allure report and the API server log as build artifacts, even if a step fails.
 
 The badge at the top of this README reflects the latest run. `database/ci-seed.sql` is also useful locally — after loading `schema.sql` on a fresh database, run it too to get a valid `userId=1` for testing `/api/checkout` manually or via Postman without creating an employee/user through the UI first.
+
+## Test Strategy
+
+[TEST_STRATEGY.md](TEST_STRATEGY.md) explains the *why* behind everything above: the test pyramid
+shape, what's deliberately not automated and the reasoning, the JaCoCo scoping decision, why
+Cucumber needed its own Failsafe lane, and the parallel-execution safety reasoning.
 
 ## Roadmap
 

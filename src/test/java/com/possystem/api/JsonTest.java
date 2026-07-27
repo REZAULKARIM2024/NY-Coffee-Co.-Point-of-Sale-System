@@ -1,5 +1,6 @@
 package com.possystem.api;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -13,6 +14,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Unit tests for the hand-rolled JSON reader/writer backing the REST API (no external JSON
  * library is available — Maven Central is unreachable from this project's build environment).
  */
+@Tag("unit")
 class JsonTest {
 
     @Test

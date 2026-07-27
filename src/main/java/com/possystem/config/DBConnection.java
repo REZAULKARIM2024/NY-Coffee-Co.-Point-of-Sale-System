@@ -6,12 +6,21 @@ import java.sql.SQLException;
 
 public class DBConnection {
 
-    private static final String DB_HOST = "localhost";
-    private static final String DB_PORT = "3306";
-    private static final String DB_NAME = "pos_system";
+    // Defaults match every existing workflow (IDE, run_*.bat, GitHub Actions CI) unchanged.
+    // Override via environment variable when it's actually needed — e.g. docker-compose sets
+    // DB_HOST=mysql, since "localhost" inside the api container would mean the container itself,
+    // not the sibling mysql container.
+    private static final String DB_HOST = env("DB_HOST", "localhost");
+    private static final String DB_PORT = env("DB_PORT", "3306");
+    private static final String DB_NAME = env("DB_NAME", "pos_system");
 
-    private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "Trf123";
+    private static final String DB_USER = env("DB_USER", "root");
+    private static final String DB_PASSWORD = env("DB_PASSWORD", "Trf123");
+
+    private static String env(String name, String defaultValue) {
+        String value = System.getenv(name);
+        return (value == null || value.isEmpty()) ? defaultValue : value;
+    }
 
     private static final String URL =
         "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME

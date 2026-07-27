@@ -1,6 +1,7 @@
 package com.possystem.api;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.net.URI;
@@ -28,6 +29,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * item and one user, then run:
  *   java -cp "target/classes;target/test-classes;lib/junit5/*" org.junit.platform.console.ConsoleLauncher --select-class com.possystem.api.ApiIntegrationTest
  */
+@Tag("api")
+@Tag("integration")
 class ApiIntegrationTest {
 
     private static final String BASE_URL = "http://localhost:8081";

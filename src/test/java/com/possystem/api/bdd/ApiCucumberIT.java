@@ -1,5 +1,6 @@
 package com.possystem.api.bdd;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.platform.suite.api.ConfigurationParameter;
 import org.junit.platform.suite.api.IncludeEngines;
 import org.junit.platform.suite.api.SelectClasspathResource;
@@ -24,5 +25,7 @@ import static io.cucumber.junit.platform.engine.Constants.GLUE_PROPERTY_NAME;
 @IncludeEngines("cucumber")
 @SelectClasspathResource("features/api")
 @ConfigurationParameter(key = GLUE_PROPERTY_NAME, value = "com.possystem.api.bdd")
+@Tag("bdd")
+@Tag("integration")
 public class ApiCucumberIT {
 }

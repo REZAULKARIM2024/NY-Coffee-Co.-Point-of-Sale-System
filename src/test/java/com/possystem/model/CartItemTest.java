@@ -1,5 +1,6 @@
 package com.possystem.model;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -10,6 +11,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Unit tests for CartItem's price math: base price + size delta + modifier deltas,
  * multiplied by quantity, with loyalty-free items always totaling zero.
  */
+@Tag("unit")
 class CartItemTest {
 
     private MenuItem menuItem(String price) {

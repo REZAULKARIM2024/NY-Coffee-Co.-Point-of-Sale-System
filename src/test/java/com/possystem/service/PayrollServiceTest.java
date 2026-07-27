@@ -1,6 +1,9 @@
 package com.possystem.service;
 
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import java.math.BigDecimal;
 
@@ -10,6 +13,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
  * Unit tests for the pure payroll math extracted from PayrollService.runPayroll():
  * computeGrossPay() and computeTaxes(). Both are static and DB-free.
  */
+@Tag("unit")
 class PayrollServiceTest {
 
     @Test
@@ -95,5 +99,36 @@ class PayrollServiceTest {
         for (BigDecimal t : taxes) {
             assertEquals(new BigDecimal("0.00"), t);
         }
+    }
+
+    // ---------- Data-driven / boundary cases ----------
+
+    @ParameterizedTest(name = "reg={0} ot={1} wknd={2} hol={3} rate={4} -> {5}")
+    @CsvSource({
+            "37.5, 0, 0, 0, 22.50, 843.75",
+            "20, 10, 0, 0, 16.00, 560.00",
+            "0, 0, 6.5, 0, 19.00, 154.38",   // 6.5*19=123.5, *1.25=154.375 -> rounds up to 154.38
+            "0, 0, 0, 3.25, 14.00, 68.25",
+            "0, 0, 0, 0, 20.00, 0.00"
+    })
+    void computeGrossPay_variousHourCombinations(String regular, String ot, String weekend, String holiday,
+                                                  String rate, String expectedGross) {
+        BigDecimal gross = PayrollService.computeGrossPay(
+                new BigDecimal(regular), new BigDecimal(ot), new BigDecimal(weekend), new BigDecimal(holiday),
+                new BigDecimal(rate));
+        assertEquals(new BigDecimal(expectedGross), gross);
+    }
+
+    @ParameterizedTest(name = "gross={0} -> federal={1}")
+    @CsvSource({
+            "1000.00, 70.30",
+            "500.00, 35.15",
+            "0.00, 0.00",
+            "123.45, 8.68",   // 123.45 * 0.0703 = 8.678535 -> rounds up to 8.68
+            "50.00, 3.52"     // 50 * 0.0703 = 3.515 exactly -> HALF_UP rounds up to 3.52
+    })
+    void computeTaxes_federalRate_variousGrossAmounts(String gross, String expectedFederal) {
+        BigDecimal[] taxes = PayrollService.computeTaxes(new BigDecimal(gross));
+        assertEquals(new BigDecimal(expectedFederal), taxes[0]);
     }
 }

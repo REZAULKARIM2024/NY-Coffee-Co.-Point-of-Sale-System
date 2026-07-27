@@ -12,6 +12,9 @@
     <cucumber.version>7.18.0</cucumber.version>
     <selenium.version>4.24.0</selenium.version>
     <webdrivermanager.version>5.9.2</webdrivermanager.version>
+    <!-- Empty by default (all tests run). Override with e.g. -Dgroups=unit for a fast
+         smoke-only pass, or -Dgroups=unit,api for unit + live-API tests without the UI suite. -->
+    <groups></groups>
   </properties>
 
   <dependencies>
@@ -111,16 +114,81 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>3.2.5</version>
         <configuration>
+          <groups>${groups}</groups>
           <systemPropertyVariables>
             <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
           </systemPropertyVariables>
         </configuration>
       </plugin>
       <plugin>
+        <groupId>org.jacoco</groupId>
+        <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.12</version>
+        <configuration>
+          <!-- Scoped to the classes that are actually exercised by in-process unit tests
+               (POSServiceTest, PayrollServiceTest, CartItemTest, JsonTest). GUI/DAO/tools code
+               isn't unit-testable without a display/DB and is deliberately excluded rather than
+               dragging the ratio down with code that was never meant to be unit-covered — see
+               TEST_STRATEGY.md. Note: ApiServer runs as a separate process (run_api_server.bat),
+               not inside this JVM, so the live/BDD/Selenium tests never contribute to this
+               number either way — coverage here is 100% deterministic regardless of whether the
+               API server happens to be running when you run `mvn verify`. -->
+          <includes>
+            <include>com/possystem/service/**</include>
+            <include>com/possystem/model/CartItem.class</include>
+            <include>com/possystem/api/Json.class</include>
+          </includes>
+        </configuration>
+        <executions>
+          <execution>
+            <id>jacoco-prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-report</id>
+            <phase>test</phase>
+            <goals>
+              <goal>report</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>jacoco-check</id>
+            <phase>verify</phase>
+            <goals>
+              <goal>check</goal>
+            </goals>
+            <configuration>
+              <!-- Measured (not guessed) at ~12% on this scope: POSService/PayrollService mix
+                   thoroughly-unit-tested pure methods (calculateTax, computeGrossPay, ...) with
+                   much larger DB-touching orchestration methods (checkout, runPayroll) that
+                   only ever run via the live server process, never inside this JVM — see
+                   TEST_STRATEGY.md. Gate set to 10%, just below the measured baseline, so it
+                   fails on an actual regression rather than on normal noise. Ratchet up as real
+                   coverage grows (e.g. once a DAO test layer exists), not as a first guess. -->
+              <rules>
+                <rule>
+                  <element>BUNDLE</element>
+                  <limits>
+                    <limit>
+                      <counter>LINE</counter>
+                      <value>COVEREDRATIO</value>
+                      <minimum>0.10</minimum>
+                    </limit>
+                  </limits>
+                </rule>
+              </rules>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-failsafe-plugin</artifactId>
         <version>3.2.5</version>
         <configuration>
+          <groups>${groups}</groups>
           <systemPropertyVariables>
             <allure.results.directory>${project.build.directory}/allure-results</allure.results.directory>
           </systemPropertyVariables>

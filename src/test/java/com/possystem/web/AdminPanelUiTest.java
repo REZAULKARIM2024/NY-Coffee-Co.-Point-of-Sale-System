@@ -3,6 +3,7 @@ package com.possystem.web;
 import io.github.bonigarcia.wdm.WebDriverManager;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.openqa.selenium.By;
 import org.openqa.selenium.WebDriver;
@@ -32,6 +33,8 @@ import static org.junit.jupiter.api.Assumptions.assumeTrue;
  * stays green without the app/DB running. Start it with run_api_server.bat (or let the GitHub
  * Actions CI job start it) to exercise this class for real.
  */
+@Tag("ui")
+@Tag("integration")
 class AdminPanelUiTest {
 
     private static final String BASE_URL = "http://localhost:8081";

@@ -1,0 +1,5 @@
+target/
+.git/
+.allure/
+lib/
+*.log

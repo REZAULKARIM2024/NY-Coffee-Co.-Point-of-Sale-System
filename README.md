@@ -40,6 +40,7 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Running with Docker](#running-with-docker)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Test Strategy](#test-strategy)
+- [Known Simplifications](#known-simplifications)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
 - [License](#license)
@@ -50,6 +51,8 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 NY Coffee Co. POS is a single-store terminal application: a cashier logs in, rings up orders from a department-tabbed menu (Beverages, Featured, Bakery, Sandwiches, Retail, Local), takes payment (cash, card, gift card, or split tender), and the system handles everything downstream — inventory deduction, order source/type tracking, delivery queueing, and loyalty points — inside atomic database transactions. Managers and admins get additional screens for staffing, payroll, purchasing, and reporting.
 
 ## Screenshots
+
+![Demo: POS, Payroll, and the web admin dashboard](docs/screenshots/demo.gif)
 
 | POS / Checkout | Payroll |
 |---|---|
@@ -436,6 +439,34 @@ The badge at the top of this README reflects the latest run. `database/ci-seed.s
 [TEST_STRATEGY.md](TEST_STRATEGY.md) explains the *why* behind everything above: the test pyramid
 shape, what's deliberately not automated and the reasoning, the JaCoCo scoping decision, why
 Cucumber needed its own Failsafe lane, and the parallel-execution safety reasoning.
+
+## Known Simplifications
+
+This is a single-owner demo/portfolio project, not a production system, and some corners were cut
+deliberately rather than by accident. Listed here instead of hidden, because knowing *why* something
+was simplified matters more than pretending it wasn't:
+
+- **REST API has no authentication or authorization.** The Swing app enforces role-based access
+  (ADMIN/MANAGER/CASHIER) at login, but the API layer added on top of it does not — it was built to
+  demonstrate REST design, testing, and CI, not to be internet-facing. Flagged again in Roadmap below.
+- **No pagination on list endpoints** (`/api/menu-items`, `/api/employees`) — they return the full
+  result set. Fine at this dataset's size; would need `LIMIT`/`OFFSET` or keyset pagination before
+  the item catalog grew much further.
+- **Payments are simulated**, not integrated with a real processor (`POSService.simulatePaymentReference`
+  generates a fake reference). Swapping in Stripe/Square would replace that one method's internals
+  without touching the rest of checkout.
+- **GUI and DAO layers have no automated tests** — a scoped decision, not an oversight; see
+  ["What's *not* tested, and why"](TEST_STRATEGY.md#whats-not-tested-and-why) in TEST_STRATEGY.md
+  for the reasoning and the cost/benefit tradeoff behind it.
+- **Single store, single currency, single tax jurisdiction.** Tax rates and the NYC framing are
+  hardcoded assumptions, not configurable per-location — multi-location would need a real
+  location/tenant model.
+- **Default DB credentials are committed as fallback values** in `DBConnection.java` (overridable
+  via env vars — see [Configuration](#configuration) — which is how Docker/CI override them without
+  code changes, but the fallback itself is a local-dev convenience, not something to carry into a
+  real deployment).
+- **No schema migration tool** (Flyway/Liquibase) — schema changes are plain `.sql` files applied by
+  hand. Workable for one developer, not for a team.
 
 ## Roadmap
 

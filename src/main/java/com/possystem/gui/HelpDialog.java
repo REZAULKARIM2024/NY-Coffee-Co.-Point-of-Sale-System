@@ -18,6 +18,8 @@ public class HelpDialog extends JDialog {
     private static final String[][] TOPICS_EN = {
         {"How do I add an item to an order?",
          "Tap a department tab (Beverages, Bakery, etc.), then tap the item. Choose size, temperature, and any add-ons, then tap Item Done."},
+        {"How does the Beverages checkout page work?",
+         "Tap the Beverages tab, then pick a section on the right (Coffee, Espresso, Teas, Refreshers, Frozen, Other Beverages) to see drinks in that group. Tapping a drink opens its customize screen: choose a Size (each size adds its own price), Hot or Iced, and any Dairy/Sweetener, Flavor Swirl, or Add-On modifiers (each adds its own price too). Tap Item Done to add it to the cart on the left — Subtotal, Tax, and Total update automatically as you add items. Enter a Discount $ amount if needed, then press PAY and choose Credit Card, CASH (enter the amount the customer hands over on the keypad first), or GC Redeem to finish the sale."},
         {"How do I apply a discount?",
          "Enter the discount amount in the Discount $ box in the cart column before pressing PAY."},
         {"How do I take a delivery order?",
@@ -37,6 +39,8 @@ public class HelpDialog extends JDialog {
     private static final String[][] TOPICS_BN = {
         {"অর্ডারে কীভাবে আইটেম যোগ করব?",
          "একটি ডিপার্টমেন্ট ট্যাবে (পানীয়, বেকারি ইত্যাদি) ট্যাপ করুন, তারপর আইটেমে ট্যাপ করুন। সাইজ, তাপমাত্রা ও অ্যাড-অন বেছে নিয়ে আইটেম সম্পন্ন-এ ট্যাপ করুন।"},
+        {"POS/Checkout: Beverages পেজ কীভাবে কাজ করে?",
+         "Beverages ট্যাবে ট্যাপ করুন, তারপর ডানপাশের সেকশন (Coffee, Espresso, Teas, Refreshers, Frozen, Other Beverages) থেকে একটি বেছে নিয়ে সেই গ্রুপের আইটেম দেখুন। কোনো ড্রিংকে ট্যাপ করলে কাস্টমাইজ স্ক্রিন খুলবে: Size বেছে নিন (প্রতিটি সাইজের নিজস্ব দাম যোগ হয়), Hot বা Iced বেছে নিন, এবং যেকোনো Dairy/Sweetener, Flavor Swirl বা Add-On মডিফায়ার (প্রতিটিরও নিজস্ব দাম যোগ হয়)। আইটেম সম্পন্ন-এ ট্যাপ করলে সেটি বামপাশের কার্টে যোগ হবে — আইটেম যোগ করার সাথে সাথে Subtotal, Tax ও Total স্বয়ংক্রিয়ভাবে আপডেট হয়। প্রয়োজনে Discount $ পরিমাণ লিখুন, তারপর PAY চেপে Credit Card, CASH (আগে কীপ্যাডে গ্রাহকের দেওয়া টাকার পরিমাণ লিখতে হবে), অথবা GC Redeem বেছে নিয়ে বিক্রয় সম্পন্ন করুন।"},
         {"ছাড় কীভাবে প্রয়োগ করব?",
          "পেমেন্ট চাপার আগে কার্ট কলামের ছাড় $ বক্সে ছাড়ের পরিমাণ লিখুন।"},
         {"ডেলিভারি অর্ডার কীভাবে নেব?",
@@ -56,6 +60,8 @@ public class HelpDialog extends JDialog {
     private static final String[][] TOPICS_HI = {
         {"ऑर्डर में आइटम कैसे जोड़ें?",
          "किसी डिपार्टमेंट टैब (पेय, बेकरी आदि) पर टैप करें, फिर आइटम पर टैप करें। आकार, तापमान और ऐड-ऑन चुनें, फिर आइटम पूर्ण पर टैप करें।"},
+        {"POS/Checkout: Beverages पेज कैसे काम करता है?",
+         "Beverages टैब पर टैप करें, फिर दाईं ओर के सेक्शन (Coffee, Espresso, Teas, Refreshers, Frozen, Other Beverages) में से कोई एक चुनकर उस समूह की ड्रिंक्स देखें। किसी ड्रिंक पर टैप करने से कस्टमाइज़ स्क्रीन खुलती है: Size चुनें (हर आकार की अपनी कीमत जुड़ती है), Hot या Iced चुनें, और कोई भी Dairy/Sweetener, Flavor Swirl या Add-On मॉडिफायर (इनकी भी अपनी कीमत जुड़ती है)। आइटम पूर्ण पर टैप करने से यह बाईं ओर कार्ट में जुड़ जाता है — आइटम जोड़ते ही Subtotal, Tax और Total अपने आप अपडेट हो जाते हैं। ज़रूरत हो तो Discount $ राशि दर्ज करें, फिर भुगतान दबाकर Credit Card, CASH (पहले कीपैड पर ग्राहक द्वारा दी गई राशि दर्ज करें), या GC Redeem चुनकर बिक्री पूरी करें।"},
         {"छूट कैसे लागू करें?",
          "भुगतान दबाने से पहले कार्ट कॉलम के छूट $ बॉक्स में छूट की राशि दर्ज करें।"},
         {"डिलीवरी ऑर्डर कैसे लें?",
@@ -75,6 +81,8 @@ public class HelpDialog extends JDialog {
     private static final String[][] TOPICS_ES = {
         {"¿Cómo agrego un artículo a un pedido?",
          "Toca una pestaña de departamento (Bebidas, Panadería, etc.), luego toca el artículo. Elige tamaño, temperatura y extras, y luego toca Artículo listo."},
+        {"¿Cómo funciona la página de pago de Bebidas?",
+         "Toca la pestaña Bebidas, luego elige una sección a la derecha (Café, Espresso, Tés, Refrescos, Congelados, Otras Bebidas) para ver las bebidas de ese grupo. Al tocar una bebida se abre la pantalla de personalización: elige un Tamaño (cada tamaño agrega su propio precio), Caliente o Helado, y cualquier modificador de Lácteos/Endulzante, Toque de Sabor o Extra (cada uno también agrega su propio precio). Toca Artículo listo para agregarlo al carrito de la izquierda — el Subtotal, Impuesto y Total se actualizan automáticamente al agregar artículos. Ingresa un monto de Descuento $ si es necesario, luego presiona PAGAR y elige Tarjeta de Crédito, EFECTIVO (ingresa primero en el teclado el monto que entrega el cliente), o Canjear Tarjeta de Regalo para completar la venta."},
         {"¿Cómo aplico un descuento?",
          "Ingresa el monto del descuento en el cuadro Descuento $ de la columna del carrito antes de presionar PAGAR."},
         {"¿Cómo tomo un pedido a domicilio?",
@@ -94,6 +102,8 @@ public class HelpDialog extends JDialog {
     private static final String[][] TOPICS_FR = {
         {"Comment ajouter un article à une commande ?",
          "Appuyez sur un onglet de département (Boissons, Boulangerie, etc.), puis sur l'article. Choisissez la taille, la température et les suppléments, puis appuyez sur Article terminé."},
+        {"Comment fonctionne la page de paiement Boissons ?",
+         "Appuyez sur l'onglet Boissons, puis choisissez une section à droite (Café, Espresso, Thés, Rafraîchissements, Surgelés, Autres Boissons) pour voir les boissons de ce groupe. Toucher une boisson ouvre l'écran de personnalisation : choisissez une Taille (chaque taille ajoute son propre prix), Chaud ou Glacé, et tout modificateur Lait/Sucre, Arôme ou Supplément (chacun ajoute aussi son propre prix). Appuyez sur Article terminé pour l'ajouter au panier à gauche — le Sous-total, la Taxe et le Total se mettent à jour automatiquement à chaque ajout. Saisissez un montant de Remise $ si nécessaire, puis appuyez sur PAYER et choisissez Carte de crédit, ESPÈCES (saisissez d'abord au clavier le montant remis par le client), ou Échanger carte-cadeau pour finaliser la vente."},
         {"Comment appliquer une remise ?",
          "Saisissez le montant de la remise dans la case Remise $ de la colonne du panier avant d'appuyer sur PAYER."},
         {"Comment prendre une commande en livraison ?",

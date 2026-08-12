@@ -22,9 +22,16 @@ public class DBConnection {
         return (value == null || value.isEmpty()) ? defaultValue : value;
     }
 
+    // allowPublicKeyRetrieval=true is required because MySQL 8's default auth plugin
+    // (caching_sha2_password) needs to exchange an RSA public key with the client, and the
+    // driver refuses to do that automatically over a non-SSL connection unless this is set
+    // explicitly (it's an opt-in, not a bug) — without it, login fails with "Public Key
+    // Retrieval is not allowed" even with correct credentials. Safe here since this connects
+    // to a local/trusted MySQL instance (localhost or the docker-compose sibling container),
+    // not a remote one over an untrusted network.
     private static final String URL =
         "jdbc:mysql://" + DB_HOST + ":" + DB_PORT + "/" + DB_NAME
-        + "?useSSL=false&serverTimezone=UTC";
+        + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC";
 
     public static Connection getConnection() throws SQLException {
         try {

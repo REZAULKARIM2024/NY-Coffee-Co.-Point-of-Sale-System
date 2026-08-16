@@ -40,6 +40,7 @@ A full-featured, coffee-shop-branded point-of-sale application built with Java S
 - [Running with Docker](#running-with-docker)
 - [CI/CD Pipeline](#cicd-pipeline)
 - [Test Strategy](#test-strategy)
+- [Manual QA Validation Reports](#manual-qa-validation-reports)
 - [Known Simplifications](#known-simplifications)
 - [Roadmap](#roadmap)
 - [Contributing](#contributing)
@@ -439,6 +440,47 @@ The badge at the top of this README reflects the latest run. `database/ci-seed.s
 [TEST_STRATEGY.md](TEST_STRATEGY.md) explains the *why* behind everything above: the test pyramid
 shape, what's deliberately not automated and the reasoning, the JaCoCo scoping decision, why
 Cucumber needed its own Failsafe lane, and the parallel-execution safety reasoning.
+
+## Manual QA Validation Reports
+
+On top of the automated test suite above, every screen in the application — all POS/Checkout
+department tabs plus every back-office page — was manually validated end-to-end, combining static
+code review with live functional testing against the running app. Bugs were reproduced live
+wherever possible (clicking through the exact repro steps) rather than just reasoned about from
+the code. The full write-up for each page — methodology, what passed, exact repro steps per bug,
+and suggested fixes — lives under `docs/`:
+
+| Page | Report | Bugs Found |
+|---|---|---|
+| Beverages (Checkout) | [QA-Validation-Beverages-Checkout.md](docs/QA-Validation-Beverages-Checkout.md) | 5 |
+| Featured (Checkout) | [QA-Validation-Featured-Checkout.md](docs/QA-Validation-Featured-Checkout.md) | 2 |
+| Bakery (Checkout) | [QA-Validation-Bakery-Checkout.md](docs/QA-Validation-Bakery-Checkout.md) | 2 |
+| Sandwiches (Checkout) | [QA-Validation-Sandwiches-Checkout.md](docs/QA-Validation-Sandwiches-Checkout.md) | 1 |
+| Retail (Checkout) | [QA-Validation-Retail-Checkout.md](docs/QA-Validation-Retail-Checkout.md) | 3 (1 Critical) |
+| Local (Checkout) | [QA-Validation-Local-Checkout.md](docs/QA-Validation-Local-Checkout.md) | 2 (1 Critical) |
+| Functions (Checkout) | [QA-Validation-Functions-Checkout.md](docs/QA-Validation-Functions-Checkout.md) | 1 (Critical) |
+| Menu Management | [QA-Validation-Menu-Management.md](docs/QA-Validation-Menu-Management.md) | 3 (1 Critical) |
+| Inventory | [QA-Validation-Inventory.md](docs/QA-Validation-Inventory.md) | 3 (1 Critical) |
+| Time Clock | [QA-Validation-TimeClock.md](docs/QA-Validation-TimeClock.md) | 3 (1 Critical) |
+| Delivery Queue | [QA-Validation-DeliveryQueue.md](docs/QA-Validation-DeliveryQueue.md) | 3 (2 Critical) |
+| Recipes | [QA-Validation-Recipes.md](docs/QA-Validation-Recipes.md) | 4 (1 Critical) |
+| Reports | [QA-Validation-Reports.md](docs/QA-Validation-Reports.md) | 2 |
+| Employees | [QA-Validation-Employees.md](docs/QA-Validation-Employees.md) | 4 |
+| Payroll | [QA-Validation-Payroll.md](docs/QA-Validation-Payroll.md) | 3 (1 Critical) |
+| Suppliers | [QA-Validation-Suppliers.md](docs/QA-Validation-Suppliers.md) | 2 |
+| About | [QA-Validation-About.md](docs/QA-Validation-About.md) | 1 |
+
+The most significant finding across the series is a **duplicate payroll run** bug (see the Payroll
+report): running payroll twice for the same employee and pay period creates a second, fully
+separate paid run with no warning at all — reproduced live, including catching a duplicate that
+was already sitting in the seed data before any live testing began. Several checkout tabs also
+share a root-cause **validation discards the whole form** pattern — typing one invalid field and
+pressing OK on an Add/Edit dialog silently discards everything already entered — documented
+per-page since the impact differs by form.
+
+These findings are also surfaced to end users directly in the app: every page has a matching Q&A
+entry in the in-app **Help & Support** dialog (top-right "Help" button), available in all 5
+supported languages, explaining both how the page works and any known quirks to watch out for.
 
 ## Known Simplifications
 

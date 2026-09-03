@@ -527,6 +527,6 @@ This is currently a single-owner project. Issues and pull requests are welcome �
 Internal/demo project — not licensed for production payment processing. `POSService` payment references are simulated; see the code for the integration seam if wiring in a real payment gateway.
 
 ## Contact
-
-**Rezaul Karim** —  NY Coffee Co.
+**Rezaul Karim** — QA Automation Engineer / SDET
+📧 rknyc2021@gmail.com
 [LinkedIn](https://www.linkedin.com/in/rezaul-karim-803a3b273)
